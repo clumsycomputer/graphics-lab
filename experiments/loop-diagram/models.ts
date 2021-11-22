@@ -32,6 +32,10 @@ export interface Circle {
   radius: number
 }
 
+export interface TraceablePoint extends Point {
+  originAngle: number
+}
+
 export interface Point {
   x: number
   y: number

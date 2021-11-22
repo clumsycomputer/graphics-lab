@@ -6,24 +6,73 @@ import {
   Loop,
   LoopBase,
   Point,
+  TraceablePoint,
 } from './models'
 
-export interface GetLoopPointsApi {
+export interface GetTracePointApi {
+  someTraceablePoints: Array<TraceablePoint>
+  traceAngle: number
+}
+
+export function getTracePoint(api: GetTracePointApi): Point {
+  const { someTraceablePoints, traceAngle } = api
+  return someTraceablePoints.reduce<Point | null>(
+    (result, someLoopTraceablePointA, loopPointIndex) => {
+      if (result) {
+        return result
+      } else if (
+        loopPointIndex < someTraceablePoints.length - 1 &&
+        someLoopTraceablePointA.originAngle <= traceAngle &&
+        someTraceablePoints[loopPointIndex + 1].originAngle >= traceAngle
+      ) {
+        const someLoopTraceablePointB = someTraceablePoints[loopPointIndex + 1]
+        return {
+          x: (someLoopTraceablePointA.x + someLoopTraceablePointB.x) / 2,
+          y: (someLoopTraceablePointA.y + someLoopTraceablePointB.y) / 2,
+        }
+      } else if (loopPointIndex === someTraceablePoints.length - 1) {
+        const someLoopTraceablePointB = someTraceablePoints[0]
+        return {
+          x: (someLoopTraceablePointA.x + someLoopTraceablePointB.x) / 2,
+          y: (someLoopTraceablePointA.y + someLoopTraceablePointB.y) / 2,
+        }
+      } else {
+        return null
+      }
+    },
+    null
+  )!
+}
+
+export interface GetLoopTraceablePointsApi {
   someLoop: Loop
   sampleCount: number
 }
 
-export function getLoopPoints(api: GetLoopPointsApi) {
+export function getLoopTraceablePoints(api: GetLoopTraceablePointsApi) {
   const { someLoop, sampleCount } = api
-  return new Array(sampleCount).fill(undefined).map((_, someSampleIndex) => {
-    const sampleAngle =
-      ((2 * Math.PI) / sampleCount) * someSampleIndex + 0.00001
-    const loopPoint = getLoopPoint({
-      someLoop,
-      childPointAngle: sampleAngle,
+  return new Array(sampleCount)
+    .fill(undefined)
+    .map<TraceablePoint>((_, someSampleIndex) => {
+      const loopPoint = getLoopPoint({
+        someLoop,
+        childPointAngle:
+          ((2 * Math.PI) / sampleCount) * someSampleIndex + 0.00001,
+      })
+      const loopChildCircle = getLoopChildCircle({ someLoop })
+      const loopPointToChildCircleCenterPointAngle =
+        ((Math.atan2(
+          loopPoint.y - loopChildCircle.center.y,
+          loopPoint.x - loopChildCircle.center.x
+        ) %
+          (2 * Math.PI)) +
+          2 * Math.PI) %
+        (2 * Math.PI)
+      return {
+        ...loopPoint,
+        originAngle: loopPointToChildCircleCenterPointAngle,
+      }
     })
-    return loopPoint
-  })
 }
 
 export interface GetLoopPointApi {
@@ -278,3 +327,19 @@ function getCirclePoint(api: GetCirclePointApi) {
   }
   return circlePoint
 }
+
+// export interface GetAdjustedSampleAngleApi {
+//   sampleAngle: number
+// }
+
+// export function getAdjustedSampleAngle(api: GetAdjustedSampleAngleApi) {
+//   const { sampleAngle } = api
+//   const positiveSampleAngle =
+//     ((sampleAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
+//   return (positiveSampleAngle === 0 &&
+//     positiveSampleAngle === (2 * Math.PI) / 4) ||
+//     positiveSampleAngle === ((2 * Math.PI) / 4) * 3 ||
+//     positiveSampleAngle === 2 * Math.PI
+//     ? positiveSampleAngle + 0.00000001
+//     : positiveSampleAngle
+// }
