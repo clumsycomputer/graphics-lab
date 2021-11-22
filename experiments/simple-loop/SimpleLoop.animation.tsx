@@ -29,33 +29,30 @@ function SimpleLoop(props: SimpleLoopFrameProps) {
       },
       radius: 30,
     },
-    subDepth: 0.0001 + 0.99 * (frameIndex / frameCount),
+    subDepth: Math.sin(Math.PI * (frameIndex / frameCount)) * 0.999 + 0.00001,
     subPhase: 2 * Math.PI * (frameIndex / frameCount),
-    subRadius: 0.9999 - 0.99 * (frameIndex / frameCount),
+    subRadius: 0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
   }
-  const loopPairPoints = getLoopPairPoints({
+  const loopPoints = getLoopPoints({
     someLoop: currentLoop,
     sampleCount: 512,
   })
   const subCircle = getLoopSubCircle({
     someLoop: currentLoop,
   })
-  const [subPoint, basePoint] = getLoopPointPair({
-    someLoop: currentLoop,
-    subPointAngle: 2 * Math.PI * (frameIndex / frameCount) + 0.00001,
-  })
-  const loopPointA: Point = {
-    x: basePoint.x,
-    y: subPoint.y,
-  }
-  const loopPointB: Point = {
-    x: subPoint.x,
-    y: basePoint.y,
-  }
-  const loopPoint: Point = {
-    x: (loopPointA.x + loopPointB.x) / 2,
-    y: (loopPointA.y + loopPointB.y) / 2,
-  }
+  // const currentSubPointAngle = 2 * Math.PI * (frameIndex / frameCount) + 0.0001
+  // const subPoint = getLoopSubPoint({
+  //   someLoop: currentLoop,
+  //   subPointAngle: currentSubPointAngle,
+  // })
+  // const basePoint = getLoopBasePoint({
+  //   someLoop: currentLoop,
+  //   subPointAngle: currentSubPointAngle,
+  // })
+  // const loopPoint = getLoopPoint({
+  //   someLoop: currentLoop,
+  //   subPointAngle: currentSubPointAngle,
+  // })
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'white'} />
@@ -92,22 +89,14 @@ function SimpleLoop(props: SimpleLoopFrameProps) {
         fill={'black'}
       />
       <polyline
-        points={loopPairPoints[0]
+        points={loopPoints
           .map((someLoopAPoint) => `${someLoopAPoint.x},${someLoopAPoint.y}`)
           .join(' ')}
         strokeWidth={0.2}
         stroke={'black'}
         fill-opacity={0}
       />
-      <polyline
-        points={loopPairPoints[1]
-          .map((someLoopAPoint) => `${someLoopAPoint.x},${someLoopAPoint.y}`)
-          .join(' ')}
-        strokeWidth={0.2}
-        stroke={'black'}
-        fill-opacity={0}
-      />
-      <circle
+      {/* <circle
         id={'sub-point'}
         cx={subPoint.x}
         cy={subPoint.y}
@@ -122,69 +111,92 @@ function SimpleLoop(props: SimpleLoopFrameProps) {
         fill={'red'}
       />
       <circle
-        id={'loop-point-a'}
-        cx={loopPointA.x}
-        cy={loopPointA.y}
+        id={'loop-point'}
+        cx={loopPoint.x}
+        cy={loopPoint.y}
         r={0.75}
         fill={'teal'}
-      />
-      <circle
-        id={'loop-point-b'}
-        cx={loopPointB.x}
-        cy={loopPointB.y}
-        r={0.75}
-        fill={'orange'}
-      />
+      /> */}
     </svg>
   )
 }
 
-interface GetLoopSubCircleApi {
-  someLoop: Loop
+interface GetCirclePointApi {
+  someCircle: Circle
+  pointAngle: number
 }
 
-function getLoopSubCircle(api: GetLoopSubCircleApi) {
-  const { someLoop } = api
-  const subCircleDepth = someLoop.subDepth * someLoop.baseCircle.radius
-  return {
-    center: {
-      x:
-        Math.cos(someLoop.subPhase) * subCircleDepth +
-        someLoop.baseCircle.center.x,
-      y:
-        Math.sin(someLoop.subPhase) * subCircleDepth +
-        someLoop.baseCircle.center.y,
-    },
-    radius: someLoop.subRadius * (someLoop.baseCircle.radius - subCircleDepth),
+function getCirclePoint(api: GetCirclePointApi) {
+  const { pointAngle, someCircle } = api
+  const circlePoint: Point = {
+    x: Math.cos(pointAngle) * someCircle.radius + someCircle.center.x,
+    y: Math.sin(pointAngle) * someCircle.radius + someCircle.center.y,
   }
+  return circlePoint
 }
 
-interface GetLoopBaseCirclePointApi {
+interface GetLoopPointApi {
   someLoop: Loop
   subPointAngle: number
 }
 
-function getLoopPointPair(api: GetLoopBaseCirclePointApi) {
+function getLoopPoint(api: GetLoopPointApi) {
+  const { someLoop, subPointAngle } = api
+  const subPoint = getLoopSubPoint({
+    someLoop,
+    subPointAngle,
+  })
+  const basePoint = getLoopBasePoint({
+    someLoop,
+    subPointAngle,
+  })
+  const loopPoint: Point = {
+    x: subPoint.x,
+    y: basePoint.y,
+  }
+  return loopPoint
+}
+
+interface GetLoopSubPointApi {
+  someLoop: Loop
+  subPointAngle: number
+}
+
+function getLoopSubPoint(api: GetLoopSubPointApi) {
   const { someLoop, subPointAngle } = api
   const subCircle = getLoopSubCircle({ someLoop })
-  const subPoint: Point = {
-    x: Math.cos(subPointAngle) * subCircle.radius + subCircle.center.x,
-    y: Math.sin(subPointAngle) * subCircle.radius + subCircle.center.y,
-  }
+  const subPoint = getCirclePoint({
+    pointAngle: subPointAngle,
+    someCircle: subCircle,
+  })
+  return subPoint
+}
+
+interface GetLoopBasePointApi {
+  someLoop: Loop
+  subPointAngle: number
+}
+
+function getLoopBasePoint(api: GetLoopBasePointApi) {
+  const { someLoop, subPointAngle } = api
+  const subCircle = getLoopSubCircle({ someLoop })
+  const subPoint = getCirclePoint({
+    pointAngle: subPointAngle,
+    someCircle: subCircle,
+  })
   const baseCenterToSubPointLength = Math.sqrt(
     Math.pow(subPoint.x - someLoop.baseCircle.center.x, 2) +
       Math.pow(subPoint.y - someLoop.baseCircle.center.y, 2)
   )
-  const subCircleDepth = someLoop.subDepth * someLoop.baseCircle.radius
   const angleFacingBaseCenterToBasePoint = Math.acos(
-    (Math.pow(subCircleDepth, 2) +
+    (Math.pow(subCircle.depth, 2) +
       Math.pow(subCircle.radius, 2) -
       Math.pow(baseCenterToSubPointLength, 2)) /
-      (2 * subCircleDepth * subCircle.radius)
+      (2 * subCircle.depth * subCircle.radius)
   )
   const angleFacingBaseCenterToSubCenter = Math.asin(
     (Math.sin(angleFacingBaseCenterToBasePoint) / someLoop.baseCircle.radius) *
-      subCircleDepth
+      subCircle.depth
   )
   const angleFacingSubCenterToBasePoint =
     Math.PI -
@@ -199,7 +211,28 @@ function getLoopPointPair(api: GetLoopBaseCirclePointApi) {
     y:
       subCenterToBasePointLength * Math.sin(subPointAngle) + subCircle.center.y,
   }
-  return [subPoint, basePoint]
+  return basePoint
+}
+
+interface GetLoopSubCircleApi {
+  someLoop: Loop
+}
+
+function getLoopSubCircle(api: GetLoopSubCircleApi): SubCircle {
+  const { someLoop } = api
+  const subCircleDepth = someLoop.subDepth * someLoop.baseCircle.radius
+  return {
+    depth: subCircleDepth,
+    center: {
+      x:
+        Math.cos(someLoop.subPhase) * subCircleDepth +
+        someLoop.baseCircle.center.x,
+      y:
+        Math.sin(someLoop.subPhase) * subCircleDepth +
+        someLoop.baseCircle.center.y,
+    },
+    radius: someLoop.subRadius * (someLoop.baseCircle.radius - subCircleDepth),
+  }
 }
 
 interface GetLoopPointsApi {
@@ -207,30 +240,17 @@ interface GetLoopPointsApi {
   sampleCount: number
 }
 
-function getLoopPairPoints(api: GetLoopPointsApi) {
+function getLoopPoints(api: GetLoopPointsApi) {
   const { someLoop, sampleCount } = api
-  return new Array(sampleCount)
-    .fill(undefined)
-    .reduce<[Array<Point>, Array<Point>]>(
-      (result, _, someSampleIndex) => {
-        const sampleAngle =
-          ((2 * Math.PI) / sampleCount) * someSampleIndex + 0.00001
-        const [subPoint, basePoint] = getLoopPointPair({
-          someLoop,
-          subPointAngle: sampleAngle,
-        })
-        result[0].push({
-          x: basePoint.x,
-          y: subPoint.y,
-        })
-        result[1].push({
-          x: subPoint.x,
-          y: basePoint.y,
-        })
-        return result
-      },
-      [[], []]
-    )
+  return new Array(sampleCount).fill(undefined).map((_, someSampleIndex) => {
+    const sampleAngle =
+      ((2 * Math.PI) / sampleCount) * someSampleIndex + 0.00001
+    const loopPoint = getLoopPoint({
+      someLoop,
+      subPointAngle: sampleAngle,
+    })
+    return loopPoint
+  })
 }
 
 interface Loop {
@@ -238,6 +258,10 @@ interface Loop {
   subPhase: number
   subDepth: number
   subRadius: number
+}
+
+interface SubCircle extends Circle {
+  depth: number
 }
 
 interface Circle {
