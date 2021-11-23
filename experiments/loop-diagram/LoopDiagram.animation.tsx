@@ -1,7 +1,7 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import React from 'react'
-import { getLoopPoint, getLoopTraceablePoints, getTracePoint } from './helpers'
-import { Loop } from './models'
+import { getCompositeLoopTraceablePoints, getTracePoint } from './helpers'
+import { Circle, CompositeLoop, Loop } from './models'
 
 const loopDiagramAnimationModule: AnimationModule = {
   animationName: 'LoopDiagram',
@@ -23,33 +23,47 @@ interface LoopDiagramFrameProps {
 
 function LoopDiagram(props: LoopDiagramFrameProps) {
   const { frameCount, frameIndex } = props
-  const currentLoop: Loop = {
-    loopType: 'baseCircleRotatedLoop',
-    baseCircle: {
-      center: {
-        x: 50,
-        y: 50,
-      },
-      radius: 30,
+  const currentBaseCircle: Circle = {
+    center: {
+      x: 50,
+      y: 50,
     },
-    childCircle: {
-      phaseAngle: 2 * Math.PI * (frameIndex / frameCount) + Math.PI / 2,
-      relativeDepth:
-        Math.sin(Math.PI * (frameIndex / frameCount)) * 0.999 + 0.00001,
-      relativeRadius:
-        0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
-    },
-    rotationAngle: 2 * Math.PI * (frameIndex / frameCount),
+    radius: 30,
   }
-  const loopTraceablePoints = getLoopTraceablePoints({
-    someLoop: currentLoop,
+  const currentLoop: CompositeLoop = {
+    loopParts: [
+      {
+        loopType: 'baseCircleRotatedLoop',
+        baseCircle: currentBaseCircle,
+        childCircle: {
+          phaseAngle: 2 * Math.PI * (frameIndex / frameCount) + Math.PI / 2,
+          relativeDepth:
+            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
+          relativeRadius:
+            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
+        },
+        rotationAngle: 2 * Math.PI * (frameIndex / frameCount),
+      },
+      {
+        loopType: 'baseCircleRotatedLoop',
+        baseCircle: currentBaseCircle,
+        childCircle: {
+          phaseAngle: 2 * Math.PI * (frameIndex / frameCount) + Math.PI / 3,
+          relativeDepth:
+            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
+          relativeRadius:
+            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
+        },
+        rotationAngle: Math.PI * (frameIndex / frameCount),
+      },
+    ],
+    rotationAngle: (-Math.PI / 2) * (frameIndex / frameCount),
+  }
+  const loopTraceablePoints = getCompositeLoopTraceablePoints({
+    someCompositeLoop: currentLoop,
     sampleCount: 2048,
   })
   const currentSampleAngle = 2 * Math.PI * (frameIndex / frameCount) + 0.00001
-  const loopPoint = getLoopPoint({
-    someLoop: currentLoop,
-    childPointAngle: currentSampleAngle,
-  })
   const tracePoint = getTracePoint({
     someTraceablePoints: loopTraceablePoints,
     traceAngle: currentSampleAngle,
@@ -68,13 +82,6 @@ function LoopDiagram(props: LoopDiagramFrameProps) {
         strokeWidth={0.2}
         stroke={'black'}
         fill-opacity={0}
-      />
-      <circle
-        id={'loop-point'}
-        cx={loopPoint.x}
-        cy={loopPoint.y}
-        r={0.75}
-        fill={'teal'}
       />
       <circle
         id={'trace-point'}

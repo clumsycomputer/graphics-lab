@@ -1,3 +1,8 @@
+export interface CompositeLoop {
+  loopParts: Array<Loop>
+  rotationAngle: number
+}
+
 export type Loop = BasicLoop | BaseCircleRotatedLoop | ChildCircleRotatedLoop
 
 export interface BasicLoop extends LoopBase<'basicLoop'> {}
