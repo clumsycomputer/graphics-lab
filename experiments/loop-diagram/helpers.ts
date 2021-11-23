@@ -7,7 +7,7 @@ import {
   Loop,
   LoopBase,
   Point,
-  TraceablePoint,
+  TracerPoint,
 } from './models'
 
 export interface GetCompositeLoopTraceablePointsApi {
@@ -19,76 +19,85 @@ export function getCompositeLoopTraceablePoints(
   api: GetCompositeLoopTraceablePointsApi
 ) {
   const { someCompositeLoop, sampleCount } = api
-  const loopPartsChildCircles = someCompositeLoop.loopParts.map((someLoop) =>
-    getLoopChildCircle({ someLoop })
-  )
-  const compositeLoopCenterVector = loopPartsChildCircles.reduce<
-    [x: number, y: number]
-  >(
-    (result, someLoopChildCircle) => [
-      result[0] + someLoopChildCircle.center.x,
-      result[1] + someLoopChildCircle.center.y,
-    ],
-    [0, 0]
-  )
-  const compositeLoopCenter: Point = {
-    x: compositeLoopCenterVector[0] / someCompositeLoop.loopParts.length,
-    y: compositeLoopCenterVector[1] / someCompositeLoop.loopParts.length,
-  }
-  const loopPartsTraceablePoints = someCompositeLoop.loopParts.map((someLoop) =>
-    getLoopTraceablePoints({
-      sampleCount,
-      someLoop,
-    }).sort((pointA, pointB) => pointA.originAngle - pointB.originAngle)
-  )
-  const previousStartingTraceIndices = someCompositeLoop.loopParts.map(() => 0)
+  const compositeLoopCenter = getCompositeLoopCenter({ someCompositeLoop })
+  const { loopPartsChildCircles, loopPartsTracerPoints, traceStartIndices } =
+    someCompositeLoop.loopParts.reduce<{
+      loopPartsChildCircles: Array<ChildCircle>
+      loopPartsTracerPoints: Array<Array<TracerPoint>>
+      traceStartIndices: Array<number>
+    }>(
+      (result, someLoop) => {
+        result.loopPartsChildCircles.push(
+          getLoopChildCircle({
+            someLoop,
+          })
+        )
+        result.loopPartsTracerPoints.push(
+          getLoopTracerPoints({
+            sampleCount,
+            someLoop,
+          })
+        )
+        result.traceStartIndices.push(0)
+        return result
+      },
+      {
+        loopPartsChildCircles: [],
+        loopPartsTracerPoints: [],
+        traceStartIndices: [],
+      }
+    )
   return new Array(sampleCount)
     .fill(undefined)
-    .map<TraceablePoint>((_, sampleIndex) => {
+    .map<TracerPoint>((_, sampleIndex) => {
       const sampleAngle = ((2 * Math.PI) / sampleCount) * sampleIndex
-      const samplePointVector = loopPartsTraceablePoints.reduce<
+      const samplePointVector = loopPartsTracerPoints.reduce<
         [x: number, y: number]
       >(
-        (result, someLoopTraceablePoints, partIndex) => {
-          const startingIndex = getLineStartingIndex({
+        (result, someLoopTracerPoints, partIndex) => {
+          const { firstPointIndex } = getFirstPointIndex({
             sampleAngle,
-            someLoopTraceablePoints,
-            previousIndex: previousStartingTraceIndices[partIndex],
+            someLoopTracerPoints,
+            traceStartIndex: traceStartIndices[partIndex],
           })
-          previousStartingTraceIndices[partIndex] = startingIndex
-          const pointA = someLoopTraceablePoints[startingIndex]
+          traceStartIndices[partIndex] = firstPointIndex
+          const pointA = someLoopTracerPoints[firstPointIndex]
           const pointB =
-            someLoopTraceablePoints[
-              (startingIndex + 1) % someLoopTraceablePoints.length
+            someLoopTracerPoints[
+              (firstPointIndex + 1) % someLoopTracerPoints.length
             ]
-          const baseLine = [pointA, pointB]
-          const targetLine = [
-            loopPartsChildCircles[partIndex].center,
-            {
-              x:
-                1000000 * Math.cos(sampleAngle) +
-                loopPartsChildCircles[partIndex].center.x,
-              y:
-                1000000 * Math.sin(sampleAngle) +
-                loopPartsChildCircles[partIndex].center.y,
-            },
-          ]
-          const intersectionScalar =
-            ((targetLine[1].x - targetLine[0].x) *
-              (baseLine[0].y - targetLine[0].y) -
-              (targetLine[1].y - targetLine[0].y) *
-                (baseLine[0].x - targetLine[0].x)) /
-            ((targetLine[1].y - targetLine[0].y) *
-              (baseLine[1].x - baseLine[0].x) -
-              (targetLine[1].x - targetLine[0].x) *
-                (baseLine[1].y - baseLine[0].y))
+          // const baseLine = [pointA, pointB]
+          // const targetLine = [
+          //   loopPartsChildCircles[partIndex].center,
+          //   {
+          //     x:
+          //       1000000 * Math.cos(sampleAngle) +
+          //       loopPartsChildCircles[partIndex].center.x,
+          //     y:
+          //       1000000 * Math.sin(sampleAngle) +
+          //       loopPartsChildCircles[partIndex].center.y,
+          //   },
+          // ]
+          // const intersectionScalar =
+          //   ((targetLine[1].x - targetLine[0].x) *
+          //     (baseLine[0].y - targetLine[0].y) -
+          //     (targetLine[1].y - targetLine[0].y) *
+          //       (baseLine[0].x - targetLine[0].x)) /
+          //   ((targetLine[1].y - targetLine[0].y) *
+          //     (baseLine[1].x - baseLine[0].x) -
+          //     (targetLine[1].x - targetLine[0].x) *
+          //       (baseLine[1].y - baseLine[0].y))
+          // const intersectionPoint = {
+          //   x:
+          //     baseLine[0].x +
+          //     intersectionScalar * (baseLine[1].x - baseLine[0].x),
+          //   y:
+          //     baseLine[0].y +
+          //     intersectionScalar * (baseLine[1].y - baseLine[0].y),
+          // }
           const intersectionPoint = {
-            x:
-              baseLine[0].x +
-              intersectionScalar * (baseLine[1].x - baseLine[0].x),
-            y:
-              baseLine[0].y +
-              intersectionScalar * (baseLine[1].y - baseLine[0].y),
+            x: (pointA.x + pointB.x) / 2,
+            y: (pointA.y + pointB.y) / 2,
           }
           const partVector = [
             intersectionPoint.x - loopPartsChildCircles[partIndex].center.x,
@@ -121,56 +130,87 @@ export function getCompositeLoopTraceablePoints(
     })
 }
 
-interface GetLineStartingIndexApi {
+interface GetFirstPointIndexApi {
   sampleAngle: number
-  someLoopTraceablePoints: Array<TraceablePoint>
-  previousIndex: number
+  someLoopTracerPoints: Array<TracerPoint>
+  traceStartIndex: number
 }
 
-function getLineStartingIndex(api: GetLineStartingIndexApi) {
-  const { previousIndex, someLoopTraceablePoints, sampleAngle } = api
-  let traceIndex = previousIndex
+function getFirstPointIndex(api: GetFirstPointIndexApi) {
+  const { traceStartIndex, someLoopTracerPoints, sampleAngle } = api
+  let traceIndex = traceStartIndex
   while (true) {
-    const angleA = someLoopTraceablePoints[traceIndex].originAngle
+    const angleA = someLoopTracerPoints[traceIndex].originAngle
     if (
-      traceIndex < someLoopTraceablePoints.length - 1 &&
+      traceIndex < someLoopTracerPoints.length - 1 &&
       angleA <= sampleAngle &&
-      someLoopTraceablePoints[traceIndex + 1].originAngle >= sampleAngle
+      someLoopTracerPoints[traceIndex + 1].originAngle >= sampleAngle
     ) {
-      return traceIndex
-    } else if (traceIndex === someLoopTraceablePoints.length - 1) {
-      return traceIndex
+      return {
+        firstPointIndex: traceIndex,
+      }
+    } else if (traceIndex === someLoopTracerPoints.length - 1) {
+      return {
+        firstPointIndex: traceIndex,
+      }
     } else if (sampleAngle < angleA) {
-      return traceIndex
+      return {
+        firstPointIndex: traceIndex,
+      }
     } else {
       traceIndex = traceIndex + 1
     }
   }
 }
 
+export interface GetCompositeLoopCenterApi {
+  someCompositeLoop: CompositeLoop
+}
+
+export function getCompositeLoopCenter(api: GetCompositeLoopCenterApi) {
+  const { someCompositeLoop } = api
+  const loopPartsChildCircles = someCompositeLoop.loopParts.map((someLoop) =>
+    getLoopChildCircle({ someLoop })
+  )
+  const compositeLoopCenterVector = loopPartsChildCircles.reduce<
+    [x: number, y: number]
+  >(
+    (result, someLoopChildCircle) => [
+      result[0] + someLoopChildCircle.center.x,
+      result[1] + someLoopChildCircle.center.y,
+    ],
+    [0, 0]
+  )
+  const compositeLoopCenter: Point = {
+    x: compositeLoopCenterVector[0] / someCompositeLoop.loopParts.length,
+    y: compositeLoopCenterVector[1] / someCompositeLoop.loopParts.length,
+  }
+  return compositeLoopCenter
+}
+
 export interface GetTracePointApi {
-  someTraceablePoints: Array<TraceablePoint>
+  someTracerPoints: Array<TracerPoint>
   traceAngle: number
 }
 
 export function getTracePoint(api: GetTracePointApi): Point {
-  const { someTraceablePoints, traceAngle } = api
-  return someTraceablePoints.reduce<Point | null>(
+  const { someTracerPoints, traceAngle } = api
+  return someTracerPoints.reduce<Point | null>(
     (result, someLoopTraceablePointA, loopPointIndex) => {
       if (result) {
         return result
       } else if (
-        loopPointIndex < someTraceablePoints.length - 1 &&
+        loopPointIndex < someTracerPoints.length - 1 &&
         someLoopTraceablePointA.originAngle <= traceAngle &&
-        someTraceablePoints[loopPointIndex + 1].originAngle >= traceAngle
+        someTracerPoints[loopPointIndex + 1].originAngle >= traceAngle
       ) {
-        const someLoopTraceablePointB = someTraceablePoints[loopPointIndex + 1]
+        const someLoopTraceablePointB = someTracerPoints[loopPointIndex + 1]
         return {
           x: (someLoopTraceablePointA.x + someLoopTraceablePointB.x) / 2,
           y: (someLoopTraceablePointA.y + someLoopTraceablePointB.y) / 2,
         }
-      } else if (loopPointIndex === someTraceablePoints.length - 1) {
-        const someLoopTraceablePointB = someTraceablePoints[0]
+      } else if (loopPointIndex === someTracerPoints.length - 1) {
+        const someLoopTraceablePointB = someTracerPoints[0]
         return {
           x: (someLoopTraceablePointA.x + someLoopTraceablePointB.x) / 2,
           y: (someLoopTraceablePointA.y + someLoopTraceablePointB.y) / 2,
@@ -183,16 +223,16 @@ export function getTracePoint(api: GetTracePointApi): Point {
   )!
 }
 
-export interface GetLoopTraceablePointsApi {
+export interface GetLoopTracerPointsApi {
   someLoop: Loop
   sampleCount: number
 }
 
-export function getLoopTraceablePoints(api: GetLoopTraceablePointsApi) {
+export function getLoopTracerPoints(api: GetLoopTracerPointsApi) {
   const { someLoop, sampleCount } = api
   return new Array(sampleCount)
     .fill(undefined)
-    .map<TraceablePoint>((_, someSampleIndex) => {
+    .map<TracerPoint>((_, someSampleIndex) => {
       const loopPoint = getLoopPoint({
         someLoop,
         childPointAngle:
@@ -212,6 +252,7 @@ export function getLoopTraceablePoints(api: GetLoopTraceablePointsApi) {
         originAngle: loopPointToChildCircleCenterPointAngle,
       }
     })
+    .sort((pointA, pointB) => pointA.originAngle - pointB.originAngle)
 }
 
 export interface GetLoopPointApi {

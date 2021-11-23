@@ -37,7 +37,7 @@ export interface Circle {
   radius: number
 }
 
-export interface TraceablePoint extends Point {
+export interface TracerPoint extends Point {
   originAngle: number
 }
 

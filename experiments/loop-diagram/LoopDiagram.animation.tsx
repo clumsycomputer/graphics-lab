@@ -1,12 +1,12 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import React from 'react'
 import { getCompositeLoopTraceablePoints, getTracePoint } from './helpers'
-import { Circle, CompositeLoop, Loop } from './models'
+import { Circle, CompositeLoop } from './models'
 
 const loopDiagramAnimationModule: AnimationModule = {
   animationName: 'LoopDiagram',
   frameSize: 2048,
-  frameCount: 360,
+  frameCount: 420,
   animationSettings: {
     frameRate: 60,
     constantRateFactor: 1,
@@ -25,10 +25,10 @@ function LoopDiagram(props: LoopDiagramFrameProps) {
   const { frameCount, frameIndex } = props
   const currentBaseCircle: Circle = {
     center: {
-      x: 50,
-      y: 50,
+      x: 125 * (frameIndex / frameCount) - 15,
+      y: 115 - 125 * (frameIndex / frameCount),
     },
-    radius: 30,
+    radius: 15,
   }
   const currentLoop: CompositeLoop = {
     loopParts: [
@@ -48,24 +48,24 @@ function LoopDiagram(props: LoopDiagramFrameProps) {
         loopType: 'baseCircleRotatedLoop',
         baseCircle: currentBaseCircle,
         childCircle: {
-          phaseAngle: 2 * Math.PI * (frameIndex / frameCount) + Math.PI / 3,
+          phaseAngle: 3 * Math.PI * (frameIndex / frameCount) + Math.PI / 3,
           relativeDepth:
             Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
           relativeRadius:
             0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
         },
-        rotationAngle: Math.PI * (frameIndex / frameCount),
+        rotationAngle: -Math.PI * (frameIndex / frameCount),
       },
     ],
     rotationAngle: (-Math.PI / 2) * (frameIndex / frameCount),
   }
-  const loopTraceablePoints = getCompositeLoopTraceablePoints({
+  const currentLoopPoints = getCompositeLoopTraceablePoints({
     someCompositeLoop: currentLoop,
     sampleCount: 2048,
   })
   const currentSampleAngle = 2 * Math.PI * (frameIndex / frameCount) + 0.00001
-  const tracePoint = getTracePoint({
-    someTraceablePoints: loopTraceablePoints,
+  const currentTracePoint = getTracePoint({
+    someTracerPoints: currentLoopPoints,
     traceAngle: currentSampleAngle,
   })
   return (
@@ -73,7 +73,7 @@ function LoopDiagram(props: LoopDiagramFrameProps) {
       <rect x={0} y={0} width={100} height={100} fill={'white'} />
       <polygon
         id={'loop-polygon'}
-        points={loopTraceablePoints
+        points={currentLoopPoints
           .map(
             (someLoopPointData) =>
               `${someLoopPointData.x},${someLoopPointData.y}`
@@ -85,9 +85,9 @@ function LoopDiagram(props: LoopDiagramFrameProps) {
       />
       <circle
         id={'trace-point'}
-        cx={tracePoint.x}
-        cy={tracePoint.y}
-        r={0.75}
+        cx={currentTracePoint.x}
+        cy={currentTracePoint.y}
+        r={0.4}
         fill={'purple'}
       />
     </svg>
