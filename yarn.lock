@@ -82,6 +82,11 @@
     "@types/connect" "*"
     "@types/node" "*"
 
+"@types/colormap@^2.3.1":
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/@types/colormap/-/colormap-2.3.1.tgz#2b1d63f58ba541b81b99ad0b743cece7c0ff5f67"
+  integrity sha512-GCPa0VCih4kp/TPPkjdjgUG19yCOPbpP9UpjEYTxUnIhaNqMrhlL9wSAyxm0cRfSubT3KUETZ+8vXYn6fmq0OQ==
+
 "@types/connect@*":
   version "3.4.35"
   resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.35.tgz#5fcf6ae445e4021d1fc2219a4873cc73a3bb2ad1"
@@ -205,6 +210,13 @@ bytes@3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/bytes/-/bytes-3.1.0.tgz#f6cf7933a360e0588fa9fde85651cdc7f805d1f6"
   integrity sha512-zauLjrfCG+xvoyaqLoV8bLVXXNGC4JqlxFCutSDWA6fJrTo2ZuvLYTqZ7aHBLZSMOopbzwv8f+wZcVzfVTI2Dg==
+
+colormap@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/colormap/-/colormap-2.3.2.tgz#4422c1178ce563806e265b96782737be85815abf"
+  integrity sha512-jDOjaoEEmA9AgA11B/jCSAvYE95r3wRoAyTf3LEHGiUVlNHJaL1mRkf5AyLSpQBVGfTEPwGEqCIzL+kgr2WgNA==
+  dependencies:
+    lerp "^1.0.3"
 
 content-disposition@0.5.3:
   version "0.5.3"
@@ -525,6 +537,11 @@ ipaddr.js@1.9.1:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
   integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
+
+lerp@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/lerp/-/lerp-1.0.3.tgz#a18c8968f917896de15ccfcc28d55a6b731e776e"
+  integrity sha1-oYyJaPkXiW3hXM/MKNVaa3Med24=
 
 locate-path@^6.0.0:
   version "6.0.0"
