@@ -1,5 +1,6 @@
+import { Circle } from '.'
 import { getRotatedPoint } from './general'
-import { BaseCircleRotatedLoop, ChildCircle, Loop, LoopBase } from './models'
+import { BaseCircleRotatedLoop, Loop, LoopBase } from './models'
 
 export interface GetLoopChildCircleApi {
   someLoop: Loop
@@ -28,12 +29,11 @@ export interface GetBasicLoopChildCircleApi {
 
 export function getBasicLoopChildCircle(
   api: GetBasicLoopChildCircleApi
-): ChildCircle {
+): Circle {
   const { someBasicLoop } = api
   const childCircleDepth =
     someBasicLoop.childCircle.relativeDepth * someBasicLoop.baseCircle.radius
   return {
-    depth: childCircleDepth,
     center: {
       x:
         Math.cos(someBasicLoop.childCircle.phaseAngle) * childCircleDepth +

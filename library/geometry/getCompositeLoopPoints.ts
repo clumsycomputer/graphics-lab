@@ -1,8 +1,12 @@
-import { getNormalizedAngleBetweenPoints } from './general'
-import { getCompositeLoopCenter } from './getCompositeLoopCenter'
+import {
+  getDistanceBetweenPoints,
+  getMidPointBetweenPoints,
+  getNormalizedAngleBetweenPoints,
+} from './general'
+import { getCompositeLoopCircles } from './getCompositeLoopCircles'
 import { getLoopChildCircle } from './getLoopChildCircle'
 import { getLoopPoints } from './getLoopPoints'
-import { BasedPoint, ChildCircle, CompositeLoop } from './models'
+import { BasedPoint, Circle, CompositeLoop } from './models'
 
 export interface GetCompositeLoopPointsApi {
   someCompositeLoop: CompositeLoop
@@ -13,12 +17,12 @@ export function getCompositeLoopPoints(
   api: GetCompositeLoopPointsApi
 ): Array<BasedPoint> {
   const { someCompositeLoop, sampleCount } = api
-  const compositeLoopCenter = getCompositeLoopCenter({
+  const [_, compositeLoopChildCircle] = getCompositeLoopCircles({
     someCompositeLoop,
   })
   const { loopPartsChildCircles, loopPartsPoints, traceStartIndices } =
     someCompositeLoop.loopParts.reduce<{
-      loopPartsChildCircles: Array<ChildCircle>
+      loopPartsChildCircles: Array<Circle>
       loopPartsPoints: Array<Array<BasedPoint>>
       traceStartIndices: Array<number>
     }>(
@@ -87,10 +91,10 @@ export function getCompositeLoopPoints(
           //     baseLine[0].y +
           //     intersectionScalar * (baseLine[1].y - baseLine[0].y),
           // }
-          const intersectionPoint = {
-            x: (pointA.x + pointB.x) / 2,
-            y: (pointA.y + pointB.y) / 2,
-          }
+          const intersectionPoint = getMidPointBetweenPoints({
+            pointA,
+            pointB,
+          })
           const partVector = [
             intersectionPoint.x - loopPartsChildCircles[partIndex]!.center.x,
             intersectionPoint.y - loopPartsChildCircles[partIndex]!.center.y,
@@ -102,28 +106,22 @@ export function getCompositeLoopPoints(
       const samplePointBase = {
         x:
           samplePointVector[0] / someCompositeLoop.loopParts.length +
-          compositeLoopCenter.x,
+          compositeLoopChildCircle.center.x,
         y:
           samplePointVector[1] / someCompositeLoop.loopParts.length +
-          compositeLoopCenter.y,
+          compositeLoopChildCircle.center.y,
       }
       return {
         ...samplePointBase,
-        basePoint: compositeLoopCenter,
+        basePoint: compositeLoopChildCircle.center,
         baseAngle: getNormalizedAngleBetweenPoints({
           targetPoint: samplePointBase,
-          basePoint: compositeLoopCenter,
+          basePoint: compositeLoopChildCircle.center,
         }),
-        baseDistance: Math.sqrt(
-          Math.pow(
-            samplePointVector[0] / someCompositeLoop.loopParts.length,
-            2
-          ) +
-            Math.pow(
-              samplePointVector[1] / someCompositeLoop.loopParts.length,
-              2
-            )
-        ),
+        baseDistance: getDistanceBetweenPoints({
+          pointA: compositeLoopChildCircle.center,
+          pointB: samplePointBase,
+        }),
       }
     })
 }

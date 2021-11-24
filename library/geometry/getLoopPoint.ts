@@ -1,8 +1,14 @@
-import { getCirclePoint, getRotatedPoint } from './general'
+import {
+  getCirclePoint,
+  getDistanceBetweenPoints,
+  getNormalizedAngleBetweenPoints,
+  getRotatedPoint,
+} from './general'
 import { getBasicLoopChildCircle } from './getLoopChildCircle'
 import {
   BaseCircleRotatedLoop,
   ChildCircleRotatedLoop,
+  Circle,
   Loop,
   LoopBase,
   Point,
@@ -82,27 +88,52 @@ interface GetBasicLoopBaseCirclePointApi {
 
 function getBasicLoopBaseCirclePoint(api: GetBasicLoopBaseCirclePointApi) {
   const { someBasicLoop, childPointAngle } = api
-  const childCircle = getBasicLoopChildCircle({
+  const basicLoopChildCircle = getBasicLoopChildCircle({
     someBasicLoop,
   })
-  const childCirclePoint = getBasicLoopChildCirclePoint({
-    someBasicLoop,
-    childPointAngle,
+  return getLoopBaseCirclePointBase({
+    baseCircle: someBasicLoop.baseCircle,
+    childCenter: basicLoopChildCircle.center,
+    childPoint: getCirclePoint({
+      someCircle: basicLoopChildCircle,
+      pointAngle: childPointAngle,
+    }),
+  })
+}
+
+export interface GetLoopBaseCirclePointBaseApi {
+  baseCircle: Circle
+  childCenter: Point
+  childPoint: Point
+}
+
+export function getLoopBaseCirclePointBase(api: GetLoopBaseCirclePointBaseApi) {
+  const { baseCircle, childPoint, childCenter } = api
+  const childDepth = getDistanceBetweenPoints({
+    pointA: baseCircle.center,
+    pointB: childCenter,
+  })
+  const childRadius = getDistanceBetweenPoints({
+    pointA: childCenter,
+    pointB: childPoint,
+  })
+  const childPointAngle = getNormalizedAngleBetweenPoints({
+    basePoint: childCenter,
+    targetPoint: childPoint,
   })
   const baseCircleCenterToChildCirclePointLength = Math.sqrt(
-    Math.pow(childCirclePoint.x - someBasicLoop.baseCircle.center.x, 2) +
-      Math.pow(childCirclePoint.y - someBasicLoop.baseCircle.center.y, 2)
+    Math.pow(childPoint.x - baseCircle.center.x, 2) +
+      Math.pow(childPoint.y - baseCircle.center.y, 2)
   )
   const baseCircleCenterToBaseCirclePointAngle = Math.acos(
-    (Math.pow(childCircle.depth, 2) +
-      Math.pow(childCircle.radius, 2) -
+    (Math.pow(childDepth, 2) +
+      Math.pow(childRadius, 2) -
       Math.pow(baseCircleCenterToChildCirclePointLength, 2)) /
-      (2 * childCircle.depth * childCircle.radius)
+      (2 * childDepth * childRadius)
   )
   const baseCircleCenterToChildCircleCenterAngle = Math.asin(
-    (Math.sin(baseCircleCenterToBaseCirclePointAngle) /
-      someBasicLoop.baseCircle.radius) *
-      childCircle.depth
+    (Math.sin(baseCircleCenterToBaseCirclePointAngle) / baseCircle.radius) *
+      childDepth
   )
   const childCircleCenterToBaseCirclePointAngle =
     Math.PI -
@@ -110,15 +141,14 @@ function getBasicLoopBaseCirclePoint(api: GetBasicLoopBaseCirclePointApi) {
     baseCircleCenterToChildCircleCenterAngle
   const childCircleCenterToBaseCirclePointLength =
     Math.sin(childCircleCenterToBaseCirclePointAngle) *
-    (someBasicLoop.baseCircle.radius /
-      Math.sin(baseCircleCenterToBaseCirclePointAngle))
+    (baseCircle.radius / Math.sin(baseCircleCenterToBaseCirclePointAngle))
   const baseCirclePoint: Point = {
     x:
       childCircleCenterToBaseCirclePointLength * Math.cos(childPointAngle) +
-      childCircle.center.x,
+      childCenter.x,
     y:
       childCircleCenterToBaseCirclePointLength * Math.sin(childPointAngle) +
-      childCircle.center.y,
+      childCenter.y,
   }
   return baseCirclePoint
 }

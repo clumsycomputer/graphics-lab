@@ -55,16 +55,29 @@ export function getNormalizedAngleBetweenPoints(
   )
 }
 
-export interface GetDistanceBetweenTwoPointsApi {
+export interface GetDistanceBetweenPointsApi {
   pointA: Point
   pointB: Point
 }
 
-export function getDistanceBetweenTwoPoints(
-  api: GetDistanceBetweenTwoPointsApi
-) {
+export function getDistanceBetweenPoints(api: GetDistanceBetweenPointsApi) {
   const { pointA, pointB } = api
-  return Math.sqrt(
-    Math.pow(pointB.x - pointA.x, 2) + Math.pow(pointB.y - pointA.y, 2)
-  )
+  const deltaX = pointB.x - pointA.x
+  const deltaY = pointB.y - pointA.y
+  return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2))
+}
+
+export interface GetMidPointBetweenPointsApi {
+  pointA: Point
+  pointB: Point
+}
+
+export function getMidPointBetweenPoints(
+  api: GetMidPointBetweenPointsApi
+): Point {
+  const { pointA, pointB } = api
+  return {
+    x: (pointA.x + pointB.x) / 2,
+    y: (pointA.y + pointB.y) / 2,
+  }
 }

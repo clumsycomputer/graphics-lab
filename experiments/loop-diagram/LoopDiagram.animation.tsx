@@ -1,24 +1,28 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import {
+  BasedPoint,
   Circle,
   CompositeLoop,
+  getCompositeLoopCircles,
   getCompositeLoopPoints,
+  getDistanceBetweenPoints,
+  getLoopBaseCirclePointBase,
+  getNormalizedAngleBetweenPoints,
+  getTracePoint,
   Point,
 } from '@library/geometry'
 import {
   getElementIndices,
   getNaturalCompositeRhythm,
 } from '@library/sequenced-space'
-import getColormap from 'colormap'
-import React, { Fragment } from 'react'
-import { getWaveFrequency } from './helpers'
+import React from 'react'
 
 const loopDiagramAnimationModule: AnimationModule = {
   animationName: 'LoopDiagram',
   frameSize: 2048,
-  frameCount: 10,
+  frameCount: 320,
   animationSettings: {
-    frameRate: 5,
+    frameRate: 60,
     constantRateFactor: 15,
   },
   FrameDescriptor: LoopDiagramFrame,
@@ -35,15 +39,10 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameCount, frameIndex } = props
   const currentBaseCircle: Circle = {
     center: {
-      x: 164 * (frameIndex / frameCount) - 32,
-      y: 132 - 164 * (frameIndex / frameCount),
+      x: 50,
+      y: 50,
     },
     radius: 20,
-    // center: {
-    //   x: 50,
-    //   y: 50,
-    // },
-    // radius: 35,
   }
   const currentLoop: CompositeLoop = {
     loopParts: [
@@ -63,7 +62,20 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
         loopType: 'baseCircleRotatedLoop',
         baseCircle: currentBaseCircle,
         childCircle: {
-          phaseAngle: 3 * Math.PI * (frameIndex / frameCount) + Math.PI / 3,
+          phaseAngle: -2 * Math.PI * (frameIndex / frameCount) + Math.PI / 2,
+          relativeDepth:
+            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
+          relativeRadius:
+            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
+        },
+        rotationAngle: -2 * Math.PI * (frameIndex / frameCount),
+      },
+      {
+        loopType: 'baseCircleRotatedLoop',
+        baseCircle: currentBaseCircle,
+        childCircle: {
+          phaseAngle:
+            Math.PI * (frameIndex / frameCount) + Math.PI / 2 - Math.PI / 3,
           relativeDepth:
             Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
           relativeRadius:
@@ -71,136 +83,126 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
         },
         rotationAngle: -Math.PI * (frameIndex / frameCount),
       },
+      {
+        loopType: 'baseCircleRotatedLoop',
+        baseCircle: currentBaseCircle,
+        childCircle: {
+          phaseAngle:
+            -Math.PI * (frameIndex / frameCount) + Math.PI / 2 + Math.PI / 3,
+          relativeDepth:
+            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
+          relativeRadius:
+            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
+        },
+        rotationAngle: Math.PI * (frameIndex / frameCount),
+      },
+      // {
+      //   loopType: 'baseCircleRotatedLoop',
+      //   baseCircle: currentBaseCircle,
+      //   childCircle: {
+      //     phaseAngle: Math.PI * (frameIndex / frameCount) + Math.PI / 3,
+      //     relativeDepth:
+      //       Math.sin(-Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
+      //     relativeRadius:
+      //       0.9999 - Math.sin(-Math.PI * (frameIndex / frameCount)) * 0.5,
+      //   },
+      //   rotationAngle: 4 * Math.PI * (frameIndex / frameCount),
+      // },
     ],
     rotationAngle: (-Math.PI / 2) * (frameIndex / frameCount),
   }
+
   const currentLoopPoints = getCompositeLoopPoints({
     someCompositeLoop: currentLoop,
-    sampleCount: 4096,
+    sampleCount: 2048,
   })
-  const layersRhythm = getNaturalCompositeRhythm({
-    rhythmResolution: 12,
-    rhythmPhase: 0,
-    rhythmParts: [
-      { rhythmDensity: 11, rhythmPhase: 1 },
-      { rhythmDensity: 7, rhythmPhase: 2 },
-      { rhythmDensity: 4, rhythmPhase: 2 },
-    ],
+  const currentFooPoints = getFooPoints({
+    someCompositeLoop: currentLoop,
+    sampleCount: 2048,
   })
-  const layersRhythmAnchors = getElementIndices({
-    someSpace: layersRhythm,
-    targetValue: true,
-  }).reverse()
-  const currentColormap = getColormap({
-    colormap: 'jet',
-    nshades: layersRhythm.length,
-    format: 'hex',
-    alpha: 1,
-  })
-  const layersPoints = currentLoopPoints.reduce<
-    Array<[Array<Point>, Array<Point>]>
-  >(
-    (result, someLoopPoint, pointIndex) => {
-      layersRhythmAnchors.forEach((someAnchor, layerIndex) => {
-        const layerFrequency = getWaveFrequency({
-          baseFrequency: 211,
-          scaleResolution: layersRhythm.length,
-          frequencyIndex: someAnchor,
-        })
-        const pointAngle =
-          ((2 * Math.PI) / currentLoopPoints.length) * pointIndex
-        const baseScalar =
-          6 *
-            Math.log(
-              layersRhythmAnchors[layerIndex]! / layersRhythm.length + 1.25
-            ) *
-            Math.sin(layerFrequency * pointAngle) +
-          (someLoopPoint.baseDistance / layersRhythm.length) * (someAnchor + 1)
-        result[layerIndex]![0].push({
-          x:
-            baseScalar * Math.cos(someLoopPoint.baseAngle) +
-            someLoopPoint.basePoint.x,
-          y:
-            baseScalar * Math.sin(someLoopPoint.baseAngle) +
-            someLoopPoint.basePoint.y,
-        })
-        const overlayScalar =
-          6 *
-            Math.log(
-              layersRhythmAnchors[layerIndex]! / layersRhythm.length + 1.25
-            ) *
-            Math.sin(
-              -2 * layerFrequency * someLoopPoint.baseAngle + pointAngle / 3
-            ) +
-          (someLoopPoint.baseDistance / layersRhythm.length) * (someAnchor + 1)
-        result[layerIndex]![1].push({
-          x:
-            overlayScalar * Math.cos(someLoopPoint.baseAngle) +
-            someLoopPoint.basePoint.x,
-          y:
-            overlayScalar * Math.sin(someLoopPoint.baseAngle) +
-            someLoopPoint.basePoint.y,
-        })
-      })
-      return result
-    },
-    layersRhythmAnchors.map(() => [[], []])
-  )
+  const [currentLoopBaseCircle, currentLoopChildCircle] =
+    getCompositeLoopCircles({
+      someCompositeLoop: currentLoop,
+    })
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
-      {layersPoints
-        .map((someLayerPoints, layerIndex) => (
-          <Fragment>
-            <mask id={`${layerIndex}`}>
-              {someLayerPoints[0].map((somePoint) => {
-                const cellLength =
-                  0.75 *
-                  Math.log(
-                    layersRhythmAnchors[layerIndex]! / layersRhythm.length +
-                      1.125
-                  )
-                const halfCellLength = cellLength / 2
-                return (
-                  <rect
-                    x={somePoint.x - halfCellLength}
-                    y={somePoint.y - halfCellLength}
-                    width={cellLength}
-                    height={cellLength}
-                    fill={'white'}
-                  />
-                )
-              })}
-              {someLayerPoints[1].map((somePoint) => {
-                const cellLength =
-                  0.75 *
-                  Math.log(
-                    layersRhythmAnchors[layerIndex]! / layersRhythm.length +
-                      1.125
-                  )
-                const halfCellLength = cellLength / 2
-                return (
-                  <rect
-                    x={somePoint.x - halfCellLength}
-                    y={somePoint.y - halfCellLength}
-                    width={cellLength}
-                    height={cellLength}
-                    fill={'black'}
-                  />
-                )
-              })}
-            </mask>
-            <rect
-              x={0}
-              y={0}
-              width={100}
-              height={100}
-              fill={currentColormap[layersRhythmAnchors[layerIndex]!]}
-              mask={`url(#${layerIndex})`}
-            />
-          </Fragment>
-        ))
-        .flat()}
+      {/* <circle
+        cx={currentLoopBaseCircle.center.x}
+        cy={currentLoopBaseCircle.center.y}
+        r={currentLoopBaseCircle.radius}
+        fillOpacity={0}
+        stroke={'white'}
+        strokeWidth={0.3}
+      />
+      <circle
+        cx={currentLoopChildCircle.center.x}
+        cy={currentLoopChildCircle.center.y}
+        r={currentLoopChildCircle.radius}
+        fillOpacity={0}
+        stroke={'white'}
+        strokeWidth={0.3}
+      /> */}
+      <polygon
+        points={currentLoopPoints
+          .map((somePoint) => `${somePoint.x},${somePoint.y}`)
+          .join(' ')}
+        fillOpacity={0}
+        stroke={'white'}
+        strokeWidth={0.3}
+      />
+      <polygon
+        points={currentFooPoints
+          .map((somePoint) => `${somePoint.x},${somePoint.y}`)
+          .join(' ')}
+        fillOpacity={0}
+        stroke={'white'}
+        strokeWidth={0.3}
+      />
     </svg>
   )
+}
+
+interface GetFooPointsApi {
+  someCompositeLoop: CompositeLoop
+  sampleCount: number
+}
+
+function getFooPoints(api: GetFooPointsApi): Array<BasedPoint> {
+  const { sampleCount, someCompositeLoop } = api
+  const currentLoopPoints = getCompositeLoopPoints({
+    sampleCount,
+    someCompositeLoop,
+  })
+  const [baseCircle, childCircle] = getCompositeLoopCircles({
+    someCompositeLoop,
+  })
+  return new Array(sampleCount).fill(undefined).map((_, sampleIndex) => {
+    const sampleAngle = ((2 * Math.PI) / sampleCount) * sampleIndex
+    const loopPoint = getTracePoint({
+      someBasedPoints: currentLoopPoints,
+      traceAngle: sampleAngle,
+    })
+    const basePoint = getLoopBaseCirclePointBase({
+      baseCircle,
+      childCenter: childCircle.center,
+      childPoint: loopPoint,
+    })
+    const fooPoint: Point = {
+      x: loopPoint.x,
+      y: basePoint.y,
+    }
+    return {
+      ...fooPoint,
+      baseAngle: getNormalizedAngleBetweenPoints({
+        basePoint: childCircle.center,
+        targetPoint: fooPoint,
+      }),
+      baseDistance: getDistanceBetweenPoints({
+        pointA: childCircle.center,
+        pointB: fooPoint,
+      }),
+      basePoint: childCircle.center,
+    }
+  })
 }
