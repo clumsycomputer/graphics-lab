@@ -81,3 +81,26 @@ export function getMidPointBetweenPoints(
     y: (pointA.y + pointB.y) / 2,
   }
 }
+
+export interface GetMirroredPointApi {
+  basePoint: Point
+  originPoint: Point
+  mirrorAngle: number
+}
+
+export function getMirroredPoint(api: GetMirroredPointApi): Point {
+  const { basePoint, originPoint, mirrorAngle } = api
+  const baseAngle = Math.atan2(
+    basePoint.y - originPoint.y,
+    basePoint.x - originPoint.x
+  )
+  const deltaAngle = baseAngle - mirrorAngle
+  const deltaRadius = Math.sqrt(
+    Math.pow(basePoint.x - originPoint.x, 2) +
+      Math.pow(basePoint.y - originPoint.y, 2)
+  )
+  return {
+    x: deltaRadius * Math.cos(mirrorAngle - deltaAngle) + originPoint.x,
+    y: deltaRadius * Math.sin(mirrorAngle - deltaAngle) + originPoint.y,
+  }
+}
