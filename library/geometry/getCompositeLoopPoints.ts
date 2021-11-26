@@ -1,11 +1,11 @@
 import {
   getDistanceBetweenPoints,
-  getMidPointBetweenPoints,
   getNormalizedAngleBetweenPoints,
 } from './general'
 import { getCompositeLoopCircles } from './getCompositeLoopCircles'
 import { getLoopChildCircle } from './getLoopChildCircle'
 import { getLoopPoints } from './getLoopPoints'
+import { getTracePointData } from './getTracePointData'
 import { BasedPoint, Circle, CompositeLoop } from './models'
 
 export interface GetCompositeLoopPointsApi {
@@ -53,53 +53,17 @@ export function getCompositeLoopPoints(
       const sampleAngle = ((2 * Math.PI) / sampleCount) * sampleIndex
       const samplePointVector = loopPartsPoints.reduce<[x: number, y: number]>(
         (result, someLoopPoints, partIndex) => {
-          const { firstPointIndex } = getFirstPointIndex({
-            sampleAngle,
-            someLoopPoints,
-            traceStartIndex: traceStartIndices[partIndex]!,
+          const [tracePoint, traceIndex] = getTracePointData({
+            traceAngle: sampleAngle,
+            someBasedPoints: someLoopPoints,
+            startingTraceIndex: traceStartIndices[partIndex]!,
           })
-          traceStartIndices[partIndex] = firstPointIndex
-          const pointA = someLoopPoints[firstPointIndex]!
-          const pointB =
-            someLoopPoints[(firstPointIndex + 1) % someLoopPoints.length]!
-          // const baseLine = [pointA, pointB]
-          // const targetLine = [
-          //   loopPartsChildCircles[partIndex].center,
-          //   {
-          //     x:
-          //       1000000 * Math.cos(sampleAngle) +
-          //       loopPartsChildCircles[partIndex].center.x,
-          //     y:
-          //       1000000 * Math.sin(sampleAngle) +
-          //       loopPartsChildCircles[partIndex].center.y,
-          //   },
-          // ]
-          // const intersectionScalar =
-          //   ((targetLine[1].x - targetLine[0].x) *
-          //     (baseLine[0].y - targetLine[0].y) -
-          //     (targetLine[1].y - targetLine[0].y) *
-          //       (baseLine[0].x - targetLine[0].x)) /
-          //   ((targetLine[1].y - targetLine[0].y) *
-          //     (baseLine[1].x - baseLine[0].x) -
-          //     (targetLine[1].x - targetLine[0].x) *
-          //       (baseLine[1].y - baseLine[0].y))
-          // const intersectionPoint = {
-          //   x:
-          //     baseLine[0].x +
-          //     intersectionScalar * (baseLine[1].x - baseLine[0].x),
-          //   y:
-          //     baseLine[0].y +
-          //     intersectionScalar * (baseLine[1].y - baseLine[0].y),
-          // }
-          const intersectionPoint = getMidPointBetweenPoints({
-            pointA,
-            pointB,
-          })
-          const partVector = [
-            intersectionPoint.x - loopPartsChildCircles[partIndex]!.center.x,
-            intersectionPoint.y - loopPartsChildCircles[partIndex]!.center.y,
+          traceStartIndices[partIndex] = traceIndex
+          const traceVector = [
+            tracePoint.x - loopPartsChildCircles[partIndex]!.center.x,
+            tracePoint.y - loopPartsChildCircles[partIndex]!.center.y,
           ]
-          return [partVector[0]! + result[0], partVector[1]! + result[1]]
+          return [traceVector[0]! + result[0], traceVector[1]! + result[1]]
         },
         [0, 0]
       )
@@ -124,37 +88,4 @@ export function getCompositeLoopPoints(
         }),
       }
     })
-}
-
-interface GetFirstPointIndexApi {
-  sampleAngle: number
-  someLoopPoints: Array<BasedPoint>
-  traceStartIndex: number
-}
-
-function getFirstPointIndex(api: GetFirstPointIndexApi) {
-  const { traceStartIndex, someLoopPoints, sampleAngle } = api
-  let traceIndex = traceStartIndex
-  while (true) {
-    const angleA = someLoopPoints[traceIndex]!.baseAngle
-    if (
-      traceIndex < someLoopPoints.length - 1 &&
-      angleA <= sampleAngle &&
-      someLoopPoints[traceIndex + 1]!.baseAngle >= sampleAngle
-    ) {
-      return {
-        firstPointIndex: traceIndex,
-      }
-    } else if (traceIndex === someLoopPoints.length - 1) {
-      return {
-        firstPointIndex: traceIndex,
-      }
-    } else if (sampleAngle < angleA) {
-      return {
-        firstPointIndex: traceIndex,
-      }
-    } else {
-      traceIndex = traceIndex + 1
-    }
-  }
 }

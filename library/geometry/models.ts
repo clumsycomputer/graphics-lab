@@ -28,10 +28,6 @@ export interface LoopBase<LoopType extends string> {
   }
 }
 
-export interface ChildCircle extends Circle {
-  depth: number
-}
-
 export interface Circle {
   center: Point
   radius: number

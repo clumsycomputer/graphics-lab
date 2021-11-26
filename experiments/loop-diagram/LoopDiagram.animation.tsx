@@ -3,22 +3,20 @@ import {
   BasedPoint,
   Circle,
   CompositeLoop,
-  getCompositeLoopCircles,
   getCompositeLoopPoints,
-  getDistanceBetweenPoints,
-  getLoopBaseCirclePointBase,
+  getLoopWavePoints,
   getMirroredPoint,
-  getNormalizedAngleBetweenPoints,
-  getTracePoint,
+  GetMirroredPointApi,
+  getSecondaryLoopPoints,
   Point,
 } from '@library/geometry'
+import { getWaveFrequency } from '@library/miscellaneous'
 import {
   DiscreteRhythm,
   getElementIndices,
   getNaturalCompositeRhythm,
 } from '@library/sequenced-space'
 import React, { Fragment } from 'react'
-import { getWaveFrequency } from './helpers'
 
 const loopDiagramAnimationModule: AnimationModule = {
   animationName: 'LoopDiagram',
@@ -110,174 +108,71 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     ],
     rotationAngle: 2 * Math.PI * (frameIndex / frameCount),
   }
-  const currentLoopPoints = getCompositeLoopPoints({
-    someCompositeLoop: currentLoop,
-    sampleCount: 2048,
-  })
-  // const currentSecondaryLoopPoints = getSecondaryLoopPoints({
-  //   someCompositeLoop: currentLoop,
-  //   sampleCount: 2048,
-  // })
-  const nestRhythm = getNaturalCompositeRhythm({
-    rhythmResolution: frameCount,
-    rhythmPhase: 0,
-    rhythmParts: [
-      {
-        rhythmDensity: 17,
-        rhythmPhase: 1,
-      },
-      {
-        rhythmDensity: 13,
-        rhythmPhase: 1,
-      },
-      {
-        rhythmDensity: 11,
-        rhythmPhase: 1,
-      },
-      {
-        rhythmDensity: 7,
-        rhythmPhase: 1,
-      },
-      {
-        rhythmDensity: 5,
-        rhythmPhase: 1,
-      },
-      {
-        rhythmDensity: 4,
-        rhythmPhase: 0,
-      },
+  const nestedLayersData = getNestedLayersData({
+    nestRhythm: getNaturalCompositeRhythm({
+      rhythmResolution: 12,
+      rhythmPhase: 0,
+      rhythmParts: [
+        {
+          rhythmDensity: 7,
+          rhythmPhase: 3,
+        },
+      ],
+    }),
+    nestMirrors: [],
+    pointsBase: [
+      ...getCompositeLoopPoints({
+        someCompositeLoop: currentLoop,
+        sampleCount: 2048,
+      }),
+      // ...getSecondaryLoopPoints({
+      //   someCompositeLoop: currentLoop,
+      //   sampleCount: 2048,
+      // }),
     ],
+    getUnderlayWaveSampleOscillation: ({
+      rhythmResolution,
+      rhythmIndex,
+      sampleAngle,
+    }) => 0,
+    getOverlayWaveSampleOscillation: ({
+      rhythmResolution,
+      rhythmIndex,
+      baseAngle,
+    }) => 0,
+    getLayerRadiusScalar: ({ rhythmIndex, rhythmResolution }) =>
+      1 - rhythmIndex / rhythmResolution,
   })
-  const nestRhythmAnchors = getElementIndices({
-    someSpace: nestRhythm,
-    targetValue: true,
-  })
-  const layersPointsData = nestRhythmAnchors.map<[Array<Point>, Array<Point>]>(
-    (nestAnchor, layerIndex) => {
-      const getBaseLayerCellOscillation = (sampleAngle: number) =>
-        (10 - 3 * Math.sin(Math.PI * (frameIndex / frameCount))) *
-        Math.sin(
-          (startFrequency +
-            (targetFrequency - startFrequency) * (frameIndex / frameCount)) *
-            sampleAngle +
-            2 * Math.PI * (frameIndex / frameCount) +
-            Math.PI / 2
-        )
-      const getOverlayLayerCellOscillation = (
-        sampleAngle: number,
-        baseAngle: number
-      ) =>
-        (10 - 3 * Math.sin(Math.PI * (frameIndex / frameCount))) *
-        Math.sin(
-          (startFrequency +
-            (targetFrequency - startFrequency) * (frameIndex / frameCount)) *
-            baseAngle +
-            2 * Math.PI * (frameIndex / frameCount) +
-            Math.PI / 2
-        )
-      const layerRadiusScalar = 1 - nestAnchor / nestRhythm.length
-      const startFrequency = getWaveFrequency({
-        baseFrequency: 220,
-        scaleResolution: nestRhythm.length,
-        frequencyIndex: nestAnchor,
-      })
-      const targetFrequency = getWaveFrequency({
-        baseFrequency: 220,
-        scaleResolution: nestRhythm.length,
-        frequencyIndex: nestAnchor + nestRhythm.length,
-      })
-      const layerBaseLoopPoints = getLoopWavePoints({
-        someLoopPoints: currentLoopPoints,
-        getWaveSampleOscillation: getBaseLayerCellOscillation,
-        getPointRadiusScalar: () => layerRadiusScalar,
-      })
-      // const layerBaseSecondaryLoopPoints = getLoopCellsPoints({
-      //   someLoopPoints: currentSecondaryLoopPoints,
-      //   getCellOscillation: getBaseLayerCellOscillation,
-      //   getCellRadiusScalar: () => layerRadiusScalar,
-      // })
-      // const layerBaseMirroredPoints = [
-      //   ...layerBaseLoopPoints,
-      //   // ...layerBaseSecondaryLoopPoints,
-      // ].map((somePoint) => {
-      //   const mirroredPoint = getMirroredPoint({
-      //     basePoint: somePoint,
-      //     originPoint: currentBaseCircle.center,
-      //     mirrorAngle: Math.PI / 2,
-      //   })
-      //   return {
-      //     ...somePoint,
-      //     ...mirroredPoint,
-      //   }
-      // })
-      const layerOverlayLoopPoints = getLoopWavePoints({
-        someLoopPoints: currentLoopPoints,
-        getWaveSampleOscillation: getOverlayLayerCellOscillation,
-        getPointRadiusScalar: () => layerRadiusScalar,
-      })
-      // const layerOverlaySecondaryLoopPoints = getLoopCellsPoints({
-      //   someLoopPoints: currentSecondaryLoopPoints,
-      //   getCellOscillation: getOverlayLayerCellOscillation,
-      //   getCellRadiusScalar: () => layerRadiusScalar,
-      // })
-      // const layerOverlayMirroredPoints = [
-      //   ...layerOverlayLoopPoints,
-      //   // ...layerOverlaySecondaryLoopPoints,
-      // ].map((somePoint) => {
-      //   const mirroredPoint = getMirroredPoint({
-      //     basePoint: somePoint,
-      //     originPoint: currentBaseCircle.center,
-      //     mirrorAngle: Math.PI / 2,
-      //   })
-      //   return {
-      //     ...somePoint,
-      //     ...mirroredPoint,
-      //   }
-      // })
-      return [
-        [
-          ...layerBaseLoopPoints,
-          // ...layerBaseSecondaryLoopPoints,
-          // ...layerBaseMirroredPoints,
-        ],
-        [
-          ...layerOverlayLoopPoints,
-          // ...layerOverlaySecondaryLoopPoints,
-          // ...layerOverlayMirroredPoints,
-        ],
-      ]
-    }
-  )
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
-      {layersPointsData.map(([basePoints, overlayPoints], layerIndex) => {
-        const layerScalar = 1 - layerIndex / layersPointsData.length / 2
-        const cellLength =
-          layerScalar * 1.75 -
-          0.5 * Math.sin(Math.PI * (frameIndex / frameCount))
+      {nestedLayersData.map(([underlayPoints, overlayPoints], layerIndex) => {
+        const layerScalar = 1 - layerIndex / nestedLayersData.length / 2
+        const cellLength = 0.2
+        // layerScalar * 1.75 -
+        // 0.5 * Math.sin(Math.PI * (frameIndex / frameCount))
         const halfCellLength = cellLength / 2
         return (
           <Fragment>
             <mask id={`${layerIndex}`}>
-              {basePoints.map((someBasePoint) => (
+              {underlayPoints.map((someUnderlayPoint) => (
                 <rect
-                  x={someBasePoint.x - halfCellLength}
-                  y={someBasePoint.y - halfCellLength}
+                  x={someUnderlayPoint.x - halfCellLength}
+                  y={someUnderlayPoint.y - halfCellLength}
                   width={cellLength}
                   height={cellLength}
                   fill={'white'}
                 />
               ))}
-              {overlayPoints.map((someOverlayPoint) => (
+              {/* {overlayPoints.map((someOverlayPoints) => (
                 <rect
-                  x={someOverlayPoint.x - halfCellLength}
-                  y={someOverlayPoint.y - halfCellLength}
+                  x={someOverlayPoints.x - halfCellLength}
+                  y={someOverlayPoints.y - halfCellLength}
                   width={cellLength}
                   height={cellLength}
                   fill={'black'}
                 />
-              ))}
+              ))} */}
             </mask>
             <rect
               mask={`url(#${layerIndex})`}
@@ -295,6 +190,12 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
                     ? 1
                     : layerIndex === 3
                     ? 5
+                    : layerIndex === 4
+                    ? 0
+                    : layerIndex === 5
+                    ? 1
+                    : layerIndex === 6
+                    ? 2
                     : -1
                 ]
               }
@@ -308,91 +209,110 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
 
 interface GetNestedLayersDataApi {
   nestRhythm: DiscreteRhythm
-  layerPointsBase: {
-    visiblePoints: Array<BasedPoint>
-    maskPoints: Array<BasedPoint>
-  }
-  getWaveSampleOscillation: (api: {
+  nestMirrors: Array<Pick<GetMirroredPointApi, 'originPoint' | 'mirrorAngle'>>
+  pointsBase: Array<BasedPoint>
+  getUnderlayWaveSampleOscillation: (api: {
     sampleAngle: number
     baseAngle: number
     layerIndex: number
+    rhythmResolution: number
+    rhythmIndex: number
+  }) => number
+  getOverlayWaveSampleOscillation: (api: {
+    sampleAngle: number
+    baseAngle: number
+    layerIndex: number
+    rhythmResolution: number
     rhythmIndex: number
   }) => number
   getLayerRadiusScalar: (api: {
     layerIndex: number
+    rhythmResolution: number
     rhythmIndex: number
   }) => number
 }
 
-function getNestedLayersData(api: GetNestedLayersDataApi) {
-  const { nestRhythm } = api
-}
-
-interface GetLoopWavePointsApi {
-  someLoopPoints: Array<BasedPoint>
-  getWaveSampleOscillation: (sampleAngle: number, baseAngle: number) => number
-  getPointRadiusScalar: () => number
-}
-
-function getLoopWavePoints(api: GetLoopWavePointsApi) {
-  const { someLoopPoints, getWaveSampleOscillation, getPointRadiusScalar } = api
-  return someLoopPoints.map((someLoopPoint, sampleIndex) => {
-    const sampleAngle = ((2 * Math.PI) / someLoopPoints.length) * sampleIndex
-    const cellRadius =
-      getWaveSampleOscillation(sampleAngle, someLoopPoint.baseAngle) +
-      someLoopPoint.baseDistance * getPointRadiusScalar()
-    return {
-      ...someLoopPoint,
-      x:
-        cellRadius * Math.cos(someLoopPoint.baseAngle) +
-        someLoopPoint.basePoint.x,
-      y:
-        cellRadius * Math.sin(someLoopPoint.baseAngle) +
-        someLoopPoint.basePoint.y,
-    }
+function getNestedLayersData(
+  api: GetNestedLayersDataApi
+): Array<[Array<Point>, Array<Point>]> {
+  const {
+    nestRhythm,
+    pointsBase,
+    getUnderlayWaveSampleOscillation,
+    getLayerRadiusScalar,
+    getOverlayWaveSampleOscillation,
+    nestMirrors,
+  } = api
+  const rhythmResolution = nestRhythm.length
+  const nestRhythmIndices = getElementIndices({
+    someSpace: nestRhythm,
+    targetValue: true,
   })
-}
-
-interface GetSecondaryPointsApi {
-  someCompositeLoop: CompositeLoop
-  sampleCount: number
-}
-
-function getSecondaryLoopPoints(api: GetSecondaryPointsApi): Array<BasedPoint> {
-  const { sampleCount, someCompositeLoop } = api
-  const currentLoopPoints = getCompositeLoopPoints({
-    sampleCount,
-    someCompositeLoop,
-  })
-  const [baseCircle, childCircle] = getCompositeLoopCircles({
-    someCompositeLoop,
-  })
-  return new Array(sampleCount).fill(undefined).map((_, sampleIndex) => {
-    const sampleAngle = ((2 * Math.PI) / sampleCount) * sampleIndex
-    const loopPoint = getTracePoint({
-      someBasedPoints: currentLoopPoints,
-      traceAngle: sampleAngle,
-    })
-    const basePoint = getLoopBaseCirclePointBase({
-      baseCircle,
-      childCenter: childCircle.center,
-      childPoint: loopPoint,
-    })
-    const secondaryLoopPoint: Point = {
-      x: loopPoint.x,
-      y: basePoint.y,
-    }
-    return {
-      ...secondaryLoopPoint,
-      baseAngle: getNormalizedAngleBetweenPoints({
-        basePoint: childCircle.center,
-        targetPoint: secondaryLoopPoint,
+  return nestRhythmIndices.map((rhythmIndex, layerIndex) => {
+    const underlayPoints = getLoopWavePoints({
+      someLoopPoints: pointsBase,
+      baseRadiusScalar: getLayerRadiusScalar({
+        rhythmResolution,
+        rhythmIndex,
+        layerIndex,
       }),
-      baseDistance: getDistanceBetweenPoints({
-        pointA: childCircle.center,
-        pointB: secondaryLoopPoint,
+      getWaveSampleOscillation: ({ sampleAngle, baseAngle }) =>
+        getUnderlayWaveSampleOscillation({
+          rhythmResolution,
+          rhythmIndex,
+          layerIndex,
+          sampleAngle,
+          baseAngle,
+        }),
+    })
+    const overlayPoints = getLoopWavePoints({
+      someLoopPoints: pointsBase,
+      baseRadiusScalar: getLayerRadiusScalar({
+        rhythmResolution,
+        rhythmIndex,
+        layerIndex,
       }),
-      basePoint: childCircle.center,
+      getWaveSampleOscillation: ({ sampleAngle, baseAngle }) =>
+        getOverlayWaveSampleOscillation({
+          rhythmResolution,
+          rhythmIndex,
+          layerIndex,
+          sampleAngle,
+          baseAngle,
+        }),
+    })
+    let mirroredUnderlayPoints: Array<Point> = []
+    let mirroredOverlayPoints: Array<Point> = []
+    for (
+      let mirrorPointIndex = 0;
+      mirrorPointIndex < pointsBase.length;
+      mirrorPointIndex++
+    ) {
+      for (
+        let mirrorIndex = 0;
+        mirrorIndex < nestMirrors.length;
+        mirrorIndex++
+      ) {
+        const someNestMirror = nestMirrors[mirrorIndex]!
+        mirroredUnderlayPoints.push(
+          getMirroredPoint({
+            mirrorAngle: someNestMirror.mirrorAngle,
+            originPoint: someNestMirror.originPoint,
+            basePoint: underlayPoints[mirrorPointIndex]!,
+          })
+        )
+        mirroredOverlayPoints.push(
+          getMirroredPoint({
+            mirrorAngle: someNestMirror.mirrorAngle,
+            originPoint: someNestMirror.originPoint,
+            basePoint: overlayPoints[mirrorPointIndex]!,
+          })
+        )
+      }
     }
+    return [
+      [...underlayPoints, ...mirroredUnderlayPoints],
+      [...overlayPoints, ...mirroredOverlayPoints],
+    ]
   })
 }
