@@ -8,6 +8,7 @@ import {
   getMirroredPoint,
   GetMirroredPointApi,
   getSecondaryLoopPoints,
+  Loop,
   Point,
 } from '@library/geometry'
 import { getWaveFrequency } from '@library/miscellaneous'
@@ -21,9 +22,9 @@ import React, { Fragment } from 'react'
 const loopDiagramAnimationModule: AnimationModule = {
   animationName: 'LoopDiagram',
   frameSize: 2048,
-  frameCount: 40 * 1,
+  frameCount: 10 * 4,
   animationSettings: {
-    frameRate: 40,
+    frameRate: 10,
     constantRateFactor: 15,
   },
   FrameDescriptor: LoopDiagramFrame,
@@ -32,12 +33,12 @@ const loopDiagramAnimationModule: AnimationModule = {
 export default loopDiagramAnimationModule
 
 const colorPalette = [
-  '#eb58c3',
-  '#58eb7f',
-  '#c858eb',
-  '#eb587a',
-  '#eb7f58',
-  '#c3eb58',
+  '#72f5ff',
+  '#ff7b72',
+  '#72ffc2',
+  '#72afff',
+  '#7b72ff',
+  '#ff72f6',
 ]
 
 interface LoopDiagramFrameProps {
@@ -47,79 +48,91 @@ interface LoopDiagramFrameProps {
 
 function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameCount, frameIndex } = props
+  const frameStamp = frameIndex / frameCount
   const currentBaseCircle: Circle = {
     center: {
       x: 50,
       y: 50,
     },
-    radius: 30,
+    radius: 35,
   }
-  const currentLoop: CompositeLoop = {
-    loopParts: [
+  const loopPartsRhythm = getNaturalCompositeRhythm({
+    rhythmResolution: 13,
+    rhythmPhase: 0,
+    rhythmParts: [
       {
-        loopType: 'baseCircleRotatedLoop',
-        baseCircle: currentBaseCircle,
-        childCircle: {
-          phaseAngle: 2 * Math.PI * (frameIndex / frameCount) + Math.PI / 2,
-          relativeDepth:
-            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
-          relativeRadius:
-            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
-        },
-        rotationAngle: 2 * Math.PI * (frameIndex / frameCount),
+        rhythmDensity: 11,
+        rhythmPhase: 1,
       },
-      // {
-      //   loopType: 'baseCircleRotatedLoop',
-      //   baseCircle: currentBaseCircle,
-      //   childCircle: {
-      //     phaseAngle: -2 * Math.PI * (frameIndex / frameCount) + Math.PI / 2,
-      //     relativeDepth:
-      //       Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
-      //     relativeRadius:
-      //       0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
-      //   },
-      //   rotationAngle: -2 * Math.PI * (frameIndex / frameCount),
-      // },
       {
-        loopType: 'baseCircleRotatedLoop',
-        baseCircle: currentBaseCircle,
-        childCircle: {
-          phaseAngle: Math.PI * (frameIndex / frameCount) + Math.PI / 2,
-          relativeDepth:
-            Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
-          relativeRadius:
-            0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
-        },
-        rotationAngle: -Math.PI * (frameIndex / frameCount),
+        rhythmDensity: 7,
+        rhythmPhase: 1,
       },
-      // {
-      //   loopType: 'baseCircleRotatedLoop',
-      //   baseCircle: currentBaseCircle,
-      //   childCircle: {
-      //     phaseAngle:
-      //       -Math.PI * (frameIndex / frameCount) + Math.PI / 2 + Math.PI / 3,
-      //     relativeDepth:
-      //       Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5 + 0.00001,
-      //     relativeRadius:
-      //       0.9999 - Math.sin(Math.PI * (frameIndex / frameCount)) * 0.5,
-      //   },
-      //   rotationAngle: Math.PI * (frameIndex / frameCount),
-      // },
+      {
+        rhythmDensity: 5,
+        rhythmPhase: 1,
+      },
+      {
+        rhythmDensity: 3,
+        rhythmPhase: 0,
+      },
     ],
-    rotationAngle: 2 * Math.PI * (frameIndex / frameCount),
+  })
+  const loopPartsRhythmIndices = getElementIndices({
+    someSpace: loopPartsRhythm,
+    targetValue: true,
+  })
+  const currentLoopParts = loopPartsRhythmIndices.map<Loop>(
+    (someRhythmIndex, partIndex) => {
+      const rhythmStamp = someRhythmIndex / loopPartsRhythm.length
+      const partAlternator = partIndex % 2 === 1 ? 1 : -1
+      const minMinDepth = 0.2
+      const midDepthRange = 0.075
+      const minDepth = midDepthRange * rhythmStamp + minMinDepth
+      const depthRange = 0.075
+      const maxDepth = minDepth + depthRange
+      const midDepth = (minDepth + maxDepth) / 2
+      const maxDepthAmplitude = depthRange / 2
+      const minMidRadius = 0.7
+      const minRadiusRange = 0.075
+      const minRadius = (1 - rhythmStamp) * minRadiusRange + minMidRadius
+      const radiusRange = 0.075
+      const maxRadius = minRadius + radiusRange
+      const midRadius = (minRadius + maxRadius) / 2
+      const maxRadiusAmplitude = radiusRange / 2
+      return {
+        loopType: 'baseCircleRotatedLoop',
+        baseCircle: currentBaseCircle,
+        childCircle: {
+          phaseAngle: 2 * Math.PI * rhythmStamp,
+          relativeDepth:
+            maxDepthAmplitude * Math.sin(Math.PI * frameStamp) + midDepth,
+          relativeRadius:
+            maxRadiusAmplitude * Math.sin(Math.PI * frameStamp) + midRadius,
+        },
+        rotationAngle: 2 * Math.PI * frameStamp * partAlternator + Math.PI / 2,
+      }
+    }
+  )
+  const currentLoop: CompositeLoop = {
+    loopParts: currentLoopParts,
+    rotationAngle: 2 * Math.PI * frameStamp,
   }
   const nestedLayersData = getNestedLayersData({
     nestRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 12,
+      rhythmResolution: 13,
       rhythmPhase: 0,
       rhythmParts: [
         {
+          rhythmDensity: 11,
+          rhythmPhase: 2,
+        },
+        {
           rhythmDensity: 7,
-          rhythmPhase: 3,
+          rhythmPhase: 1,
         },
       ],
     }),
-    nestMirrors: [],
     pointsBase: [
       ...getCompositeLoopPoints({
         someCompositeLoop: currentLoop,
@@ -130,27 +143,54 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
       //   sampleCount: 2048,
       // }),
     ],
+    nestMirrors: [],
     getUnderlayWaveSampleOscillation: ({
       rhythmResolution,
       rhythmIndex,
       sampleAngle,
-    }) => 0,
+      layerIndex,
+    }) => {
+      const rhythmStamp = 1 - rhythmIndex / rhythmResolution
+      const minAmplitude = 0.5
+      const maxAmplitude = 5
+      const amplitudeRange = maxAmplitude - minAmplitude
+      const amplitudeScalar = rhythmStamp * amplitudeRange + minAmplitude
+      return (
+        (amplitudeScalar * Math.sin(Math.PI * frameStamp) + minAmplitude) *
+        Math.sin(220 * sampleAngle + 2 * Math.PI * frameStamp)
+      )
+    },
     getOverlayWaveSampleOscillation: ({
       rhythmResolution,
       rhythmIndex,
       baseAngle,
-    }) => 0,
+    }) => {
+      const rhythmStamp = 1 - rhythmIndex / rhythmResolution
+      const minAmplitude = 0.5
+      const maxAmplitude = 5
+      const amplitudeRange = maxAmplitude - minAmplitude
+      const amplitudeScalar = rhythmStamp * amplitudeRange + minAmplitude
+      return (
+        (amplitudeScalar * Math.sin(Math.PI * frameStamp) + minAmplitude) *
+        Math.sin(220 * baseAngle + 2 * Math.PI * frameStamp)
+      )
+    },
     getLayerRadiusScalar: ({ rhythmIndex, rhythmResolution }) =>
       1 - rhythmIndex / rhythmResolution,
+    getLayerShiftPoint: ({ rhythmIndex, rhythmResolution }) => {
+      return {
+        x: 0,
+        y: 0,
+      }
+    },
   })
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
       {nestedLayersData.map(([underlayPoints, overlayPoints], layerIndex) => {
-        const layerScalar = 1 - layerIndex / nestedLayersData.length / 2
-        const cellLength = 0.2
-        // layerScalar * 1.75 -
-        // 0.5 * Math.sin(Math.PI * (frameIndex / frameCount))
+        const cellLength =
+          1 -
+          1 * Math.sin((Math.PI / 4) * (layerIndex / nestedLayersData.length))
         const halfCellLength = cellLength / 2
         return (
           <Fragment>
@@ -164,7 +204,7 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
                   fill={'white'}
                 />
               ))}
-              {/* {overlayPoints.map((someOverlayPoints) => (
+              {overlayPoints.map((someOverlayPoints) => (
                 <rect
                   x={someOverlayPoints.x - halfCellLength}
                   y={someOverlayPoints.y - halfCellLength}
@@ -172,7 +212,7 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
                   height={cellLength}
                   fill={'black'}
                 />
-              ))} */}
+              ))}
             </mask>
             <rect
               mask={`url(#${layerIndex})`}
@@ -230,6 +270,11 @@ interface GetNestedLayersDataApi {
     rhythmResolution: number
     rhythmIndex: number
   }) => number
+  getLayerShiftPoint: (api: {
+    layerIndex: number
+    rhythmResolution: number
+    rhythmIndex: number
+  }) => Point
 }
 
 function getNestedLayersData(
@@ -238,6 +283,7 @@ function getNestedLayersData(
   const {
     nestRhythm,
     pointsBase,
+    getLayerShiftPoint,
     getUnderlayWaveSampleOscillation,
     getLayerRadiusScalar,
     getOverlayWaveSampleOscillation,
@@ -249,8 +295,14 @@ function getNestedLayersData(
     targetValue: true,
   })
   return nestRhythmIndices.map((rhythmIndex, layerIndex) => {
+    const layerShiftPoint = getLayerShiftPoint({
+      layerIndex,
+      rhythmIndex,
+      rhythmResolution,
+    })
     const underlayPoints = getLoopWavePoints({
       someLoopPoints: pointsBase,
+      loopShiftPoint: layerShiftPoint,
       baseRadiusScalar: getLayerRadiusScalar({
         rhythmResolution,
         rhythmIndex,
@@ -267,6 +319,7 @@ function getNestedLayersData(
     })
     const overlayPoints = getLoopWavePoints({
       someLoopPoints: pointsBase,
+      loopShiftPoint: layerShiftPoint,
       baseRadiusScalar: getLayerRadiusScalar({
         rhythmResolution,
         rhythmIndex,

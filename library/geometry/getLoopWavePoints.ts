@@ -1,8 +1,9 @@
-import { BasedPoint } from './models'
+import { BasedPoint, Point } from './models'
 
 export interface GetLoopWavePointsApi {
   someLoopPoints: Array<BasedPoint>
   baseRadiusScalar: number
+  loopShiftPoint: Point
   getWaveSampleOscillation: (api: {
     sampleAngle: number
     baseAngle: number
@@ -10,7 +11,12 @@ export interface GetLoopWavePointsApi {
 }
 
 export function getLoopWavePoints(api: GetLoopWavePointsApi) {
-  const { someLoopPoints, getWaveSampleOscillation, baseRadiusScalar } = api
+  const {
+    someLoopPoints,
+    getWaveSampleOscillation,
+    baseRadiusScalar,
+    loopShiftPoint,
+  } = api
   return someLoopPoints.map((someLoopPoint, sampleIndex) => {
     const sampleAngle = ((2 * Math.PI) / someLoopPoints.length) * sampleIndex
     const cellRadius =
@@ -23,10 +29,12 @@ export function getLoopWavePoints(api: GetLoopWavePointsApi) {
       ...someLoopPoint,
       x:
         cellRadius * Math.cos(someLoopPoint.baseAngle) +
-        someLoopPoint.basePoint.x,
+        someLoopPoint.basePoint.x +
+        loopShiftPoint.x,
       y:
         cellRadius * Math.sin(someLoopPoint.baseAngle) +
-        someLoopPoint.basePoint.y,
+        someLoopPoint.basePoint.y +
+        loopShiftPoint.y,
     }
   })
 }
