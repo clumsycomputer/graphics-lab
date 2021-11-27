@@ -7,7 +7,6 @@ import {
   getLoopWavePoints,
   getMirroredPoint,
   GetMirroredPointApi,
-  getSecondaryLoopPoints,
   Loop,
   Point,
 } from '@library/geometry'
@@ -19,18 +18,18 @@ import {
 } from '@library/sequenced-space'
 import React, { Fragment } from 'react'
 
-const loopDiagramAnimationModule: AnimationModule = {
-  animationName: 'LoopDiagram',
+const starterKitAnimationModule: AnimationModule = {
+  animationName: 'StarterKit',
   frameSize: 2048,
   frameCount: 10 * 4,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
   },
-  FrameDescriptor: LoopDiagramFrame,
+  FrameDescriptor: StarterKitFrame,
 }
 
-export default loopDiagramAnimationModule
+export default starterKitAnimationModule
 
 const colorPalette = [
   '#72f5ff',
@@ -41,12 +40,12 @@ const colorPalette = [
   '#ff72f6',
 ]
 
-interface LoopDiagramFrameProps {
+interface StarterKitFrameProps {
   frameCount: number
   frameIndex: number
 }
 
-function LoopDiagramFrame(props: LoopDiagramFrameProps) {
+function StarterKitFrame(props: StarterKitFrameProps) {
   const { frameCount, frameIndex } = props
   const frameStamp = frameIndex / frameCount
   const currentBaseCircle: Circle = {
@@ -54,7 +53,7 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
       x: 50,
       y: 50,
     },
-    radius: 35,
+    radius: 30,
   }
   const loopPartsRhythm = getNaturalCompositeRhythm({
     rhythmResolution: 13,
@@ -155,34 +154,51 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
       const maxAmplitude = 5
       const amplitudeRange = maxAmplitude - minAmplitude
       const amplitudeScalar = rhythmStamp * amplitudeRange + minAmplitude
+      const underlayFrequency = getWaveFrequency({
+        baseFrequency: 220,
+        scaleResolution: rhythmResolution,
+        frequencyIndex: rhythmIndex,
+      })
+      const layerAlternator = layerIndex % 2 === 0 ? 1 : -1
       return (
         (amplitudeScalar * Math.sin(Math.PI * frameStamp) + minAmplitude) *
-        Math.sin(220 * sampleAngle + 2 * Math.PI * frameStamp)
+        Math.sin(
+          underlayFrequency * sampleAngle +
+            2 * Math.PI * frameStamp * layerAlternator
+        )
       )
     },
     getOverlayWaveSampleOscillation: ({
       rhythmResolution,
       rhythmIndex,
       baseAngle,
+      layerIndex,
     }) => {
       const rhythmStamp = 1 - rhythmIndex / rhythmResolution
       const minAmplitude = 0.5
       const maxAmplitude = 5
       const amplitudeRange = maxAmplitude - minAmplitude
       const amplitudeScalar = rhythmStamp * amplitudeRange + minAmplitude
+      const overlayFrequency = getWaveFrequency({
+        baseFrequency: 220,
+        scaleResolution: rhythmResolution,
+        frequencyIndex: rhythmIndex,
+      })
+      const layerAlternator = layerIndex % 2 === 0 ? 1 : -1
       return (
         (amplitudeScalar * Math.sin(Math.PI * frameStamp) + minAmplitude) *
-        Math.sin(220 * baseAngle + 2 * Math.PI * frameStamp)
+        Math.sin(
+          overlayFrequency * baseAngle +
+            2 * Math.PI * frameStamp * layerAlternator
+        )
       )
     },
     getLayerRadiusScalar: ({ rhythmIndex, rhythmResolution }) =>
       1 - rhythmIndex / rhythmResolution,
-    getLayerShiftPoint: ({ rhythmIndex, rhythmResolution }) => {
-      return {
-        x: 0,
-        y: 0,
-      }
-    },
+    getLayerShiftPoint: () => ({
+      x: 0,
+      y: 0,
+    }),
   })
   return (
     <svg viewBox={`0 0 100 100`}>
