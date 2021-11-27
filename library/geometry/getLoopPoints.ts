@@ -14,8 +14,7 @@ export function getLoopPoints(api: GetLoopPointsApi): Array<BasedPoint> {
     .map<BasedPoint>((_, someSampleIndex) => {
       const loopPoint = getLoopPoint({
         someLoop,
-        childPointAngle:
-          ((2 * Math.PI) / sampleCount) * someSampleIndex + 0.00001,
+        childPointAngle: ((2 * Math.PI) / sampleCount) * someSampleIndex,
       })
       const loopChildCircle = getLoopChildCircle({ someLoop })
       const loopPointToChildCircleCenterPointAngle =

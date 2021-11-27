@@ -1,4 +1,5 @@
 import {
+  getAdjustedSampleAngle,
   getCirclePoint,
   getDistanceBetweenPoints,
   getNormalizedAngleBetweenPoints,
@@ -24,7 +25,9 @@ export function getLoopPoint(api: GetLoopPointApi) {
   switch (someLoop.loopType) {
     case 'basicLoop':
       return getBasicLoopPoint({
-        childPointAngle,
+        childPointAngle: getAdjustedSampleAngle({
+          sampleAngle: childPointAngle,
+        }),
         someBasicLoop: someLoop,
       })
     case 'baseCircleRotatedLoop':
