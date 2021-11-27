@@ -1,0 +1,10 @@
+{
+  "name": "@clumsycomputer/graphics-lab",
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "@clumsycomputer/graphics-renderer": "1.0.1",
+    "@types/colormap": "^2.3.1",
+    "colormap": "^2.3.2"
+  }
+}
