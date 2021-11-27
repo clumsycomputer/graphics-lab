@@ -1,3 +1,4 @@
+import { getNormalizedAngle } from '@library/miscellaneous'
 import { Circle, Point } from './models'
 
 export interface GetCirclePointApi {
@@ -47,12 +48,12 @@ export function getNormalizedAngleBetweenPoints(
   api: GetNormalizedAngleBetweenPointsApi
 ) {
   const { targetPoint, basePoint } = api
-  return (
-    ((Math.atan2(targetPoint.y - basePoint.y, targetPoint.x - basePoint.x) %
-      (2 * Math.PI)) +
-      2 * Math.PI) %
-    (2 * Math.PI)
-  )
+  return getNormalizedAngle({
+    someAngle: Math.atan2(
+      targetPoint.y - basePoint.y,
+      targetPoint.x - basePoint.x
+    ),
+  })
 }
 
 export interface GetDistanceBetweenPointsApi {

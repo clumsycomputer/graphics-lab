@@ -113,6 +113,9 @@ export function getLoopBaseCirclePointBase(api: GetLoopBaseCirclePointBaseApi) {
     pointA: baseCircle.center,
     pointB: childCenter,
   })
+  if (childDepth === 0) {
+    throw new Error('"childDepth === 0" is not handled')
+  }
   const childRadius = getDistanceBetweenPoints({
     pointA: childCenter,
     pointB: childPoint,
