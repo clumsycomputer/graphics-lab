@@ -35,7 +35,7 @@ function LoopGroupFrame(props: LoopGroupFrameProps) {
       x: 50,
       y: 50,
     },
-    radius: 70,
+    radius: 65,
   }
   const baseLoop: CompositeLoop = {
     loopParts: [
@@ -44,7 +44,7 @@ function LoopGroupFrame(props: LoopGroupFrameProps) {
         loopType: 'baseCircleRotatedLoop',
         rotationAngle:
           (Math.PI / 12) * Math.sin(2 * Math.PI * frameStamp) -
-          (Math.PI / 5) * Math.sin(Math.PI * frameStamp),
+          (Math.PI / 5) * Math.sin(2 * Math.PI * frameStamp),
         childCircle: {
           relativeDepth: 0.4,
           relativeRadius: 0.3 * Math.sin(2 * Math.PI * frameStamp) + 0.6,
@@ -74,7 +74,9 @@ function LoopGroupFrame(props: LoopGroupFrameProps) {
         },
       },
     ],
-    rotationAngle: 0,
+    rotationAngle:
+      (Math.PI / 11) * Math.sin(2 * Math.PI * frameStamp) -
+      (Math.PI / 7) * Math.sin(2 * Math.PI * frameStamp),
   }
   const [_, baseChildCircle] = getCompositeLoopCircles({
     someCompositeLoop: baseLoop,
@@ -109,7 +111,7 @@ function LoopGroupFrame(props: LoopGroupFrameProps) {
       {/* <polygon
         fillOpacity={0}
         strokeWidth={0.2}
-        stroke={'white'}
+        stroke={'orange'}
         points={basePoints
           .map((somePoint) => `${somePoint.x},${somePoint.y}`)
           .join(' ')}
