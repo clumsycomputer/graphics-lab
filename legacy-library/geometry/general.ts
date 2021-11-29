@@ -1,4 +1,4 @@
-import { getNormalizedAngle } from '@library/miscellaneous'
+import { getNormalizedAngle } from '@legacy-library/miscellaneous'
 import { Circle, Point } from './models'
 
 export interface GetCirclePointApi {

@@ -13,6 +13,7 @@
     "noFallthroughCasesInSwitch": false,
     "baseUrl": ".",
     "paths": {
+      "@legacy-library/*": ["legacy-library/*"],
       "@library/*": ["library/*"]
     }
   },

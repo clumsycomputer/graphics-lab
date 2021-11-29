@@ -9,13 +9,13 @@ import {
   GetMirroredPointApi,
   Loop,
   Point,
-} from '@library/geometry'
-import { getWaveFrequency } from '@library/miscellaneous'
+} from '@legacy-library/geometry'
+import { getWaveFrequency } from '@legacy-library/miscellaneous'
 import {
   DiscreteRhythm,
   getElementIndices,
   getNaturalCompositeRhythm,
-} from '@library/sequenced-space'
+} from '@legacy-library/sequenced-space'
 import React, { Fragment } from 'react'
 
 const starterKitAnimationModule: AnimationModule = {
