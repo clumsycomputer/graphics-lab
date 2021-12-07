@@ -96,3 +96,44 @@ export interface GetMirroredPointApi {
   originPoint: Point
   mirrorAngle: number
 }
+
+export interface GetMinimumDistanceBetweenPointAndLineApi {
+  somePoint: Point
+  someLine: [Point, Point]
+}
+
+export function getMinimumDistanceBetweenPointAndLine(
+  api: GetMinimumDistanceBetweenPointAndLineApi
+) {
+  const { someLine, somePoint } = api
+  const lineDeltaX = someLine[1].x - someLine[0].x
+  const lineDeltaY = someLine[1].y - someLine[0].y
+  return (
+    Math.abs(
+      lineDeltaX * (someLine[0].y - somePoint.y) -
+        (someLine[0].x - somePoint.x) * lineDeltaY
+    ) / Math.pow(Math.pow(lineDeltaX, 2) + Math.pow(lineDeltaY, 2), 0.5)
+  )
+}
+
+export interface GetIntersectionPointApi {
+  lineA: [Point, Point]
+  lineB: [Point, Point]
+}
+
+// adjusted & optimized implementation of http://paulbourke.net/geometry/pointlineplane/
+export function getIntersectionPoint(api: GetIntersectionPointApi): Point {
+  const { lineB, lineA } = api
+  const deltaYB = lineB[1].y - lineB[0].y
+  const deltaXA = lineA[1].x - lineA[0].x
+  const deltaXB = lineB[1].x - lineB[0].x
+  const deltaYA = lineA[1].y - lineA[0].y
+  const slopeA =
+    (deltaXB * (lineA[0].y - lineB[0].y) -
+      deltaYB * (lineA[0].x - lineB[0].x)) /
+    (deltaYB * deltaXA - deltaXB * deltaYA)
+  return {
+    x: lineA[0].x + slopeA * deltaXA,
+    y: lineA[0].y + slopeA * deltaYA,
+  }
+}

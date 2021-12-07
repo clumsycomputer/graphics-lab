@@ -1,9 +1,9 @@
-import { getMidPointBetweenPoints } from './general'
+import { getCirclePoint, getIntersectionPoint } from './general'
 import { getLoopPointsData } from './getLoopPointsData'
-import { Point } from './models'
+import { LoopPoint, Point } from './models'
 
 export interface GetTracePointDataApi {
-  someLoopPoints: ReturnType<typeof getLoopPointsData>['samplePoints']
+  someLoopPointsData: ReturnType<typeof getLoopPointsData>
   traceAngle: number
   startingTracePointIndex: number
 }
@@ -11,36 +11,60 @@ export interface GetTracePointDataApi {
 export function getTracePointData(
   api: GetTracePointDataApi
 ): [tracePoint: Point, traceIndex: number] {
-  const { startingTracePointIndex, someLoopPoints, traceAngle } = api
+  const { startingTracePointIndex, someLoopPointsData, traceAngle } = api
   const adjustedTraceAngle =
-    traceAngle < someLoopPoints[startingTracePointIndex]!.centerAngle
-      ? someLoopPoints[startingTracePointIndex]!.centerAngle
+    traceAngle <
+    someLoopPointsData.samplePoints[startingTracePointIndex]!.centerAngle
+      ? someLoopPointsData.samplePoints[startingTracePointIndex]!.centerAngle
       : traceAngle
   for (
     let traceIndex = startingTracePointIndex;
-    traceIndex < someLoopPoints.length - 1;
+    traceIndex < someLoopPointsData.samplePoints.length - 1;
     traceIndex++
   ) {
-    const loopPointA = someLoopPoints[startingTracePointIndex]!
-    const loopPointB = someLoopPoints[startingTracePointIndex + 1]!
+    const loopPointA = someLoopPointsData.samplePoints[startingTracePointIndex]!
+    const loopPointB =
+      someLoopPointsData.samplePoints[startingTracePointIndex + 1]!
     if (
       adjustedTraceAngle >= loopPointA.centerAngle &&
       adjustedTraceAngle <= loopPointB.centerAngle
     ) {
       return [
-        getMidPointBetweenPoints({
-          pointA: loopPointA,
-          pointB: loopPointB,
+        getIntersectionPoint({
+          lineA: [loopPointA, loopPointB],
+          lineB: [
+            someLoopPointsData.samplesCenter,
+            getCirclePoint({
+              someCircle: {
+                center: someLoopPointsData.samplesCenter,
+                radius: 10000000,
+              },
+              pointAngle: adjustedTraceAngle,
+            }),
+          ],
         }),
         traceIndex,
       ]
     }
   }
+  const loopPointA = someLoopPointsData.samplePoints[startingTracePointIndex]!
+  const loopPointB =
+    someLoopPointsData.samplePoints[startingTracePointIndex + 1]!
   return [
-    getMidPointBetweenPoints({
-      pointA: someLoopPoints[someLoopPoints.length - 1]!,
-      pointB: someLoopPoints[0]!,
+    getIntersectionPoint({
+      lineA: [loopPointA, loopPointB],
+      lineB: [
+        someLoopPointsData.samplesCenter,
+        getCirclePoint({
+          someCircle: {
+            center: someLoopPointsData.samplesCenter,
+            radius: 10000000,
+          },
+          pointAngle: adjustedTraceAngle,
+        }),
+      ],
     }),
-    someLoopPoints.length - 1,
+    someLoopPointsData.samplePoints.length - 1,
   ]
+  // throw new Error('wtf? getTracePointData')
 }
