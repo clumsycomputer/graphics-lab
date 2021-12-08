@@ -1,26 +1,3 @@
-export interface Loop {
-  baseCircle: Circle
-  childLoop: ChildLoop | null
-  childRotationAngle: number
-}
-
-export type ChildLoop = MiddleChildLoop | FinalChildLoop
-
-export interface MiddleChildLoop extends ChildLoopBase<'middleChildLoop'> {
-  childRotationAngle: number
-  childLoop: ChildLoop
-}
-
-export interface FinalChildLoop extends ChildLoopBase<'finalChildLoop'> {}
-
-interface ChildLoopBase<ChildLoopType extends string> {
-  childLoopType: ChildLoopType
-  relativeDepth: number
-  relativeRadius: number
-  phaseAngle: number
-  baseRotationAngle: number
-}
-
 export interface Circle {
   center: Point
   radius: number
@@ -33,4 +10,46 @@ export interface Point {
 
 export interface LoopPoint extends Point {
   centerAngle: number
+}
+
+export type Loop = RootLoop
+
+export type RootLoop = SoloRootLoop | ParentRootLoop
+
+export interface SoloRootLoop extends LoopBase<'soloRootLoop'>, RootLoopBase {}
+
+export interface ParentRootLoop
+  extends LoopBase<'parentRootLoop'>,
+    RootLoopBase,
+    ParentLoopBase {}
+
+interface RootLoopBase {
+  baseCircle: Circle
+}
+
+export type ChildLoop = ParentChildLoop | BabyChildLoop
+
+export interface ParentChildLoop
+  extends LoopBase<'parentChildLoop'>,
+    ParentLoopBase,
+    ChildLoopBase {}
+
+export interface BabyChildLoop
+  extends LoopBase<'babyChildLoop'>,
+    ChildLoopBase {}
+
+interface ChildLoopBase {
+  relativeDepth: number
+  relativeRadius: number
+  phaseAngle: number
+  baseRotationAngle: number
+}
+
+interface ParentLoopBase {
+  childLoop: ChildLoop
+  childRotationAngle: number
+}
+
+interface LoopBase<LoopType extends string> {
+  loopType: LoopType
 }

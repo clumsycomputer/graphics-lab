@@ -13,66 +13,71 @@ export interface GetLoopPointApi {
 
 export function getLoopPoint(api: GetLoopPointApi): Point {
   const { someLoop, pointAngle } = api
-  if (someLoop.childLoop) {
-    const childCircleDepth =
-      someLoop.childLoop.relativeDepth * someLoop.baseCircle.radius
-    const unrotatedChildCircle: Circle = {
-      center: {
-        x:
-          childCircleDepth * Math.cos(someLoop.childLoop.phaseAngle) +
-          someLoop.baseCircle.center.x,
-        y:
-          childCircleDepth * Math.sin(someLoop.childLoop.phaseAngle) +
-          someLoop.baseCircle.center.y,
-      },
-      radius:
-        someLoop.childLoop.relativeRadius *
-        (someLoop.baseCircle.radius - childCircleDepth),
-    }
-    const childLoopPoint =
-      someLoop.childLoop.childLoopType === 'middleChildLoop'
-        ? getLoopPoint({
-            pointAngle,
-            someLoop: {
-              childLoop: someLoop.childLoop.childLoop,
-              childRotationAngle: someLoop.childLoop.childRotationAngle,
-              baseCircle: unrotatedChildCircle,
-            },
-          })
-        : getLoopPoint({
-            pointAngle,
-            someLoop: {
-              childLoop: null,
-              childRotationAngle: 0,
-              baseCircle: unrotatedChildCircle,
-            },
-          })
-    const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
-      childLoopPoint,
-      baseCircle: someLoop.baseCircle,
-      childCircleCenter: unrotatedChildCircle.center,
-    })
-    return getRotatedPoint({
-      rotationAngle: someLoop.childRotationAngle,
-      anchorPoint: getRotatedPoint({
-        anchorPoint: someLoop.baseCircle.center,
-        basePoint: unrotatedChildCircle.center,
-        rotationAngle: someLoop.childLoop.baseRotationAngle,
-      }),
-      basePoint: getRotatedPoint({
-        anchorPoint: someLoop.baseCircle.center,
-        rotationAngle: someLoop.childLoop.baseRotationAngle,
-        basePoint: {
-          x: loopBaseCirclePoint.x,
-          y: childLoopPoint.y,
+  switch (someLoop.loopType) {
+    case 'parentRootLoop':
+      const childCircleDepth =
+        someLoop.childLoop.relativeDepth * someLoop.baseCircle.radius
+      const unrotatedChildCircle: Circle = {
+        center: {
+          x:
+            childCircleDepth * Math.cos(someLoop.childLoop.phaseAngle) +
+            someLoop.baseCircle.center.x,
+          y:
+            childCircleDepth * Math.sin(someLoop.childLoop.phaseAngle) +
+            someLoop.baseCircle.center.y,
         },
-      }),
-    })
-  } else {
-    return getCirclePoint({
-      pointAngle,
-      someCircle: someLoop.baseCircle,
-    })
+        radius:
+          someLoop.childLoop.relativeRadius *
+          (someLoop.baseCircle.radius - childCircleDepth),
+      }
+      const childLoopPoint =
+        someLoop.childLoop.loopType === 'parentChildLoop'
+          ? getLoopPoint({
+              pointAngle,
+              someLoop: {
+                childLoop: someLoop.childLoop.childLoop,
+                childRotationAngle: someLoop.childLoop.childRotationAngle,
+                baseCircle: unrotatedChildCircle,
+                loopType: 'parentRootLoop',
+              },
+            })
+          : someLoop.childLoop.loopType === 'babyChildLoop'
+          ? getLoopPoint({
+              pointAngle,
+              someLoop: {
+                baseCircle: unrotatedChildCircle,
+                loopType: 'soloRootLoop',
+              },
+            })
+          : (() => {
+              throw new Error('wtf? getLoopPoint => parentRootLoop')
+            })()
+      const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
+        childLoopPoint,
+        baseCircle: someLoop.baseCircle,
+        childCircleCenter: unrotatedChildCircle.center,
+      })
+      return getRotatedPoint({
+        rotationAngle: someLoop.childRotationAngle,
+        anchorPoint: getRotatedPoint({
+          anchorPoint: someLoop.baseCircle.center,
+          basePoint: unrotatedChildCircle.center,
+          rotationAngle: someLoop.childLoop.baseRotationAngle,
+        }),
+        basePoint: getRotatedPoint({
+          anchorPoint: someLoop.baseCircle.center,
+          rotationAngle: someLoop.childLoop.baseRotationAngle,
+          basePoint: {
+            x: loopBaseCirclePoint.x,
+            y: childLoopPoint.y,
+          },
+        }),
+      })
+    case 'soloRootLoop':
+      return getCirclePoint({
+        pointAngle,
+        someCircle: someLoop.baseCircle,
+      })
   }
 }
 

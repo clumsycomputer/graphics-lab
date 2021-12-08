@@ -1,16 +1,11 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
-import { DistributiveOmit } from '@legacy-library/miscellaneous/models'
-import {
-  getElementIndices,
-  getNaturalCompositeRhythm,
-} from '@legacy-library/sequenced-space'
-import { getLoopPoint } from '@library/getLoopPoint'
 import { getLoopPointsData } from '@library/getLoopPointsData'
+import { getLoopWaveSamples } from '@library/getLoopWaveSamples'
 import {
+  BabyChildLoop,
   ChildLoop,
-  FinalChildLoop,
   Loop,
-  MiddleChildLoop,
+  ParentChildLoop,
 } from '@library/models'
 import React from 'react'
 
@@ -35,25 +30,44 @@ interface LoopDiagramFrameProps {
 function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameIndex, frameCount } = props
   const frameStamp = frameIndex / frameCount
-  const loopA = getFooLoop({
-    frameStamp,
-    relativeDepthBaseRange: [0.1, 0.3],
-    relativeRadiusBaseRange: [0.9, 0.7],
-    phaseAngleBaseRange: [Math.PI / 3, Math.PI / 9],
-    baseRotationAngleBaseRange: [Math.PI / 9, Math.PI / 3],
-    baseRotationScalarRange: [Math.PI / 3, Math.PI / 9],
-    loopStructureRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 11,
-      rhythmPhase: 1,
-      rhythmParts: [
-        {
-          rhythmDensity: 3,
-          rhythmPhase: 0,
+  const loopA = getUpdatedLoop({
+    baseLoop: {
+      loopType: 'parentRootLoop',
+      childRotationAngle: 0,
+      baseCircle: {
+        center: { x: 0, y: 0 },
+        radius: 1,
+      },
+      childLoop: {
+        loopType: 'parentChildLoop',
+        relativeDepth: 0.1,
+        relativeRadius: 0.9,
+        phaseAngle: Math.PI / 3,
+        baseRotationAngle: 0,
+        childRotationAngle: 0,
+        childLoop: {
+          loopType: 'babyChildLoop',
+          relativeDepth: 0.1,
+          relativeRadius: 0.9,
+          phaseAngle: Math.PI / 5,
+          baseRotationAngle: 0,
         },
-      ],
-    }),
+      },
+    },
+    getUpdatedChildLoop: ({ childLoopBase, childLoopIndex }) => {
+      return {
+        ...childLoopBase,
+        phaseAngle:
+          Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
+          childLoopBase.phaseAngle,
+      }
+    },
   })
   const loopPointsDataA = getLoopPointsData({
+    someLoop: loopA,
+    sampleCount: 1024,
+  })
+  const loopWaveSamplesA = getLoopWaveSamples({
     someLoop: loopA,
     sampleCount: 1024,
   })
@@ -65,10 +79,10 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
           <circle cx={somePoint.x} cy={somePoint.y} r={0.015} fill={'orange'} />
         ))}
       </g>
-      {loopPointsDataA.samplePoints.map((someWaveSample, sampleIndex) => (
+      {loopWaveSamplesA.map((someWaveSample, sampleIndex) => (
         <circle
-          cx={2 * (sampleIndex / loopPointsDataA.samplePoints.length)}
-          cy={someWaveSample.y}
+          cx={2 * (sampleIndex / loopWaveSamplesA.length)}
+          cy={someWaveSample}
           r={0.015}
           fill={'orange'}
           transform={`translate(30, 75) scale(20, 20)`}
@@ -78,188 +92,91 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   )
 }
 
-interface GetLoopWaveSampleApi {
-  someLoop: Loop
-  sampleAngle: number
+interface GetRangeValuesApi {
+  someRange: [number, number]
+  someRhythm: Array<boolean>
 }
 
-function getLoopWaveSample(api: GetLoopWaveSampleApi) {
-  const { someLoop, sampleAngle } = api
-  return getLoopPoint({
-    someLoop,
-    pointAngle: sampleAngle,
-  }).y
-}
-
-interface GetFooLoopApi {
-  frameStamp: number
-  loopStructureRhythm: Array<boolean>
-  phaseAngleBaseRange: [number, number]
-  baseRotationAngleBaseRange: [number, number]
-  relativeDepthBaseRange: [number, number]
-  relativeRadiusBaseRange: [number, number]
-  baseRotationScalarRange: [number, number]
-}
-
-function getFooLoop(api: GetFooLoopApi): Loop {
-  const {
-    loopStructureRhythm,
-    phaseAngleBaseRange,
-    baseRotationAngleBaseRange,
-    relativeDepthBaseRange,
-    relativeRadiusBaseRange,
-    baseRotationScalarRange,
-    frameStamp,
-  } = api
-  const loopStructureRhythmAnchors = getElementIndices({
-    someSpace: loopStructureRhythm,
-    targetValue: true,
-  })
-  const phaseAngleBaseRangeLength =
-    phaseAngleBaseRange[1] - phaseAngleBaseRange[0]
-  const baseRotationAngleBaseRangeLength =
-    baseRotationAngleBaseRange[1] - baseRotationAngleBaseRange[0]
-  const relativeDepthBaseRangeLength =
-    relativeDepthBaseRange[1] - relativeDepthBaseRange[0]
-  const relativeRadiusBaseRangeLength =
-    relativeRadiusBaseRange[1] - relativeRadiusBaseRange[0]
-  const baseRotationScalarRangeLength =
-    baseRotationScalarRange[1] - baseRotationScalarRange[0]
-  const childLoopsBaseData = loopStructureRhythmAnchors.reduce<
-    Array<{
-      phaseAngleBase: number
-      baseRotationAngleBase: number
-      relativeDepthBase: number
-      relativeRadiusBase: number
-      baseRotationScalar: number
-    }>
-  >((result, someLoopStructureAnchor) => {
-    const loopStructureRhythmStamp =
-      someLoopStructureAnchor / loopStructureRhythm.length
-    return [
-      ...result,
-      {
-        phaseAngleBase:
-          loopStructureRhythmStamp * phaseAngleBaseRangeLength +
-          phaseAngleBaseRange[0],
-        baseRotationAngleBase:
-          loopStructureRhythmStamp * baseRotationAngleBaseRangeLength +
-          baseRotationAngleBaseRange[0],
-        relativeDepthBase:
-          loopStructureRhythmStamp * relativeDepthBaseRangeLength +
-          relativeDepthBaseRange[0],
-        relativeRadiusBase:
-          loopStructureRhythmStamp * relativeRadiusBaseRangeLength +
-          relativeRadiusBaseRange[0],
-        baseRotationScalar:
-          loopStructureRhythmStamp * baseRotationScalarRangeLength +
-          baseRotationScalarRange[0],
-      },
-    ]
+function getRangeValues(api: GetRangeValuesApi) {
+  const { someRange, someRhythm } = api
+  const rangeLength = someRange[1] - someRange[0]
+  return someRhythm.reduce<Array<number>>((result, someCell, cellIndex) => {
+    if (someCell === true) {
+      const cellStamp = cellIndex / someRhythm.length
+      result.push(rangeLength * cellStamp)
+    }
+    return result
   }, [])
-  const fooLoopBase: Loop = {
-    baseCircle: {
-      center: {
-        x: 0,
-        y: 0,
-      },
-      radius: 1,
-    },
-    childRotationAngle: 0,
-    childLoop: childLoopsBaseData
-      .reduce<Array<Omit<MiddleChildLoop, 'childLoop'> | FinalChildLoop>>(
-        (result, someChildLoopBaseData, childLoopIndex) => {
-          const nextChildLoop:
-            | Omit<MiddleChildLoop, 'childLoop'>
-            | FinalChildLoop =
-            childLoopIndex === childLoopsBaseData.length - 1
-              ? {
-                  phaseAngle: someChildLoopBaseData.phaseAngleBase,
-                  relativeDepth: someChildLoopBaseData.relativeDepthBase,
-                  relativeRadius: someChildLoopBaseData.relativeRadiusBase,
-                  baseRotationAngle:
-                    someChildLoopBaseData.baseRotationAngleBase,
-                  childLoopType: 'finalChildLoop',
-                }
-              : {
-                  phaseAngle: someChildLoopBaseData.phaseAngleBase,
-                  relativeDepth: someChildLoopBaseData.relativeDepthBase,
-                  relativeRadius: someChildLoopBaseData.relativeRadiusBase,
-                  baseRotationAngle:
-                    someChildLoopBaseData.baseRotationAngleBase,
-                  childLoopType: 'middleChildLoop',
-                  childRotationAngle: 0,
-                }
-          return [nextChildLoop, ...result]
-        },
-        []
-      )
-      .reduce<ChildLoop | null>((result, somePartialChildLoop) => {
-        return {
-          ...somePartialChildLoop,
-          childLoop: result,
-        } as ChildLoop
-      }, null)!,
+}
+
+interface GetUpdatedLoopApi {
+  baseLoop: Loop
+  getUpdatedChildLoop: <SomeChildLoop extends ChildLoop>(api: {
+    baseLoop: Loop
+    childLoopBase: SomeChildLoop extends ParentChildLoop
+      ? Omit<SomeChildLoop, 'childLoop'>
+      : SomeChildLoop extends BabyChildLoop
+      ? SomeChildLoop
+      : never
+    childLoopIndex: number
+  }) => SomeChildLoop extends ParentChildLoop
+    ? Omit<SomeChildLoop, 'childLoop'>
+    : SomeChildLoop extends BabyChildLoop
+    ? SomeChildLoop
+    : never
+}
+
+function getUpdatedLoop(api: GetUpdatedLoopApi): Loop {
+  const { baseLoop, getUpdatedChildLoop } = api
+  switch (baseLoop.loopType) {
+    case 'parentRootLoop':
+      const updatedChildLoop = updateChildLoop({
+        baseLoop,
+        getUpdatedChildLoop,
+        scopedLoop: baseLoop.childLoop,
+        childLoopIndex: 0,
+      })
+      return {
+        ...baseLoop,
+        childLoop: updatedChildLoop,
+      }
+    case 'soloRootLoop':
+      return {
+        ...baseLoop,
+      }
   }
-  return {
-    baseCircle: {
-      center: {
-        x: 0,
-        y: 0,
-      },
-      radius: 1,
-    },
-    childRotationAngle: 0,
-    childLoop: childLoopsBaseData
-      .reduce<Array<Omit<MiddleChildLoop, 'childLoop'> | FinalChildLoop>>(
-        (result, someChildLoopBaseData, childLoopIndex) => {
-          const childLoopHarmonicScalar = Math.pow(2, childLoopIndex + 1)
-          const nextChildLoop:
-            | Omit<MiddleChildLoop, 'childLoop'>
-            | FinalChildLoop =
-            childLoopIndex === childLoopsBaseData.length - 1
-              ? {
-                  phaseAngle:
-                    childLoopHarmonicScalar * Math.PI * frameStamp +
-                    someChildLoopBaseData.phaseAngleBase,
-                  relativeDepth: someChildLoopBaseData.relativeDepthBase,
-                  relativeRadius: someChildLoopBaseData.relativeRadiusBase,
-                  baseRotationAngle:
-                    someChildLoopBaseData.baseRotationScalar *
-                      getLoopWaveSample({
-                        someLoop: fooLoopBase,
-                        sampleAngle:
-                          childLoopHarmonicScalar * Math.PI * frameStamp,
-                      }) +
-                    someChildLoopBaseData.baseRotationAngleBase,
-                  childLoopType: 'finalChildLoop',
-                }
-              : {
-                  phaseAngle:
-                    childLoopHarmonicScalar * Math.PI * frameStamp +
-                    someChildLoopBaseData.phaseAngleBase,
-                  relativeDepth: someChildLoopBaseData.relativeDepthBase,
-                  relativeRadius: someChildLoopBaseData.relativeRadiusBase,
-                  baseRotationAngle:
-                    someChildLoopBaseData.baseRotationScalar *
-                      getLoopWaveSample({
-                        someLoop: fooLoopBase,
-                        sampleAngle:
-                          childLoopHarmonicScalar * Math.PI * frameStamp,
-                      }) +
-                    someChildLoopBaseData.baseRotationAngleBase,
-                  childLoopType: 'middleChildLoop',
-                  childRotationAngle: 0,
-                }
-          return [nextChildLoop, ...result]
-        },
-        []
-      )
-      .reduce<ChildLoop | null>((result, somePartialChildLoop) => {
-        return {
-          ...somePartialChildLoop,
-          childLoop: result,
-        } as ChildLoop
-      }, null)!,
+}
+
+interface UpdateChildLoopApi
+  extends Pick<GetUpdatedLoopApi, 'baseLoop' | 'getUpdatedChildLoop'> {
+  scopedLoop: ChildLoop
+  childLoopIndex: number
+}
+
+function updateChildLoop(api: UpdateChildLoopApi): ChildLoop {
+  const { scopedLoop, getUpdatedChildLoop, baseLoop, childLoopIndex } = api
+  switch (scopedLoop.loopType) {
+    case 'parentChildLoop':
+      const updatedParentChildLoop = getUpdatedChildLoop({
+        baseLoop,
+        childLoopIndex,
+        childLoopBase: scopedLoop,
+      })
+      return {
+        ...updatedParentChildLoop,
+        childLoop: updateChildLoop({
+          baseLoop,
+          getUpdatedChildLoop,
+          scopedLoop: scopedLoop.childLoop,
+          childLoopIndex: childLoopIndex + 1,
+        }),
+      }
+    case 'babyChildLoop':
+      const updatedBabyChildLoop = getUpdatedChildLoop({
+        baseLoop,
+        childLoopIndex,
+        childLoopBase: scopedLoop,
+      })
+      return updatedBabyChildLoop
   }
 }
