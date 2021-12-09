@@ -23,34 +23,36 @@ export function getTracePointData(
       : traceAngle
   for (
     let traceIndex = startingTracePointIndex;
-    traceIndex < someLoopPointsData.samplePoints.length - 1;
+    traceIndex < someLoopPointsData.samplePoints.length;
     traceIndex++
   ) {
-    const loopPointA = someLoopPointsData.samplePoints[startingTracePointIndex]!
+    const loopPointA = someLoopPointsData.samplePoints[traceIndex]!
     const loopPointB =
-      someLoopPointsData.samplePoints[startingTracePointIndex + 1]!
+      someLoopPointsData.samplePoints[
+        (traceIndex + 1) % someLoopPointsData.samplePoints.length
+      ]!
     if (
-      adjustedTraceAngle >= loopPointA.centerAngle &&
-      adjustedTraceAngle <= loopPointB.centerAngle
+      (adjustedTraceAngle >= loopPointA.centerAngle &&
+        adjustedTraceAngle <= loopPointB.centerAngle) ||
+      traceIndex === someLoopPointsData.samplePoints.length - 1
     ) {
       return [
-        getMidPointBetweenPoints({
-          pointA: loopPointA,
-          pointB: loopPointB,
+        getIntersectionPoint({
+          lineA: [loopPointA, loopPointB],
+          lineB: [
+            someLoopPointsData.samplesCenter,
+            getCirclePoint({
+              someCircle: {
+                center: someLoopPointsData.samplesCenter,
+                radius: 1000000,
+              },
+              pointAngle: adjustedTraceAngle,
+            }),
+          ],
         }),
         traceIndex,
       ]
     }
   }
-  const loopPointA = someLoopPointsData.samplePoints[startingTracePointIndex]!
-  const loopPointB =
-    someLoopPointsData.samplePoints[startingTracePointIndex + 1]!
-  return [
-    getMidPointBetweenPoints({
-      pointA: loopPointA,
-      pointB: loopPointB,
-    }),
-    someLoopPointsData.samplePoints.length - 1,
-  ]
-  // throw new Error('wtf? getTracePointData')
+  throw new Error('wtf? getTracePointData')
 }

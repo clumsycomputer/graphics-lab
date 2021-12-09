@@ -1,5 +1,6 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import { getLoopPointsData } from '@library/getLoopPointsData'
+import { getLoopWaveSample } from '@library/getLoopWaveSample'
 import { getLoopWaveSamples } from '@library/getLoopWaveSamples'
 import {
   BabyChildLoop,
@@ -30,36 +31,49 @@ interface LoopDiagramFrameProps {
 function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameIndex, frameCount } = props
   const frameStamp = frameIndex / frameCount
-  const loopA = getUpdatedLoop({
-    baseLoop: {
-      loopType: 'parentRootLoop',
+  const baseLoopA: Loop = {
+    loopType: 'parentRootLoop',
+    childRotationAngle: 0,
+    baseCircle: {
+      center: { x: 0, y: 0 },
+      radius: 1,
+    },
+    childLoop: {
+      loopType: 'parentChildLoop',
+      relativeDepth: 0.1,
+      relativeRadius: 0.9,
+      phaseAngle: Math.PI / 3,
+      baseRotationAngle: Math.PI / 3,
       childRotationAngle: 0,
-      baseCircle: {
-        center: { x: 0, y: 0 },
-        radius: 1,
-      },
       childLoop: {
-        loopType: 'parentChildLoop',
-        relativeDepth: 0.1,
-        relativeRadius: 0.9,
-        phaseAngle: Math.PI / 3,
-        baseRotationAngle: 0,
-        childRotationAngle: 0,
-        childLoop: {
-          loopType: 'babyChildLoop',
-          relativeDepth: 0.1,
-          relativeRadius: 0.9,
-          phaseAngle: Math.PI / 5,
-          baseRotationAngle: 0,
-        },
+        loopType: 'babyChildLoop',
+        relativeDepth: 0.3,
+        relativeRadius: 0.7,
+        phaseAngle: Math.PI / 5,
+        baseRotationAngle: Math.PI / 5,
       },
     },
+  }
+  const baseLoopPointsDataA = getLoopPointsData({
+    someLoop: baseLoopA,
+    sampleCount: 1024,
+  })
+  const loopA = getUpdatedLoop({
+    baseLoop: baseLoopA,
     getUpdatedChildLoop: ({ childLoopBase, childLoopIndex }) => {
       return {
         ...childLoopBase,
         phaseAngle:
           Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
           childLoopBase.phaseAngle,
+        baseRotationAngle:
+          (Math.PI / 3) *
+            getLoopWaveSample({
+              someLoopPointsData: baseLoopPointsDataA,
+              sampleAngle:
+                Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp,
+            }) +
+          childLoopBase.baseRotationAngle,
       }
     },
   })

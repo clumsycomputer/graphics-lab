@@ -1,5 +1,5 @@
 import { getLoopPointsData } from './getLoopPointsData'
-import { getTracePointData } from './getTracePointData'
+import { getLoopWaveSample } from './getLoopWaveSample'
 import { Loop } from './models'
 
 export interface GetLoopWaveSamplesApi {
@@ -23,13 +23,11 @@ export function getLoopWaveSamples(api: GetLoopWaveSamplesApi) {
     sampleCount,
     someLoop: adjustedLoop,
   })
-  return loopPointsData.samplePoints.map(
-    (somePoint, sampleIndex) =>
-      getTracePointData({
-        someLoopPointsData: loopPointsData,
-        traceAngle:
-          2 * Math.PI * (sampleIndex / loopPointsData.samplePoints.length),
-        startingTracePointIndex: 0,
-      })[0].y - loopPointsData.samplesCenter.y
+  return loopPointsData.samplePoints.map((_, sampleIndex) =>
+    getLoopWaveSample({
+      someLoopPointsData: loopPointsData,
+      sampleAngle:
+        2 * Math.PI * (sampleIndex / loopPointsData.samplePoints.length),
+    })
   )
 }
