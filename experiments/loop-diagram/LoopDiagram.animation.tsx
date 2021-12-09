@@ -1,4 +1,5 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
+import { getNaturalCompositeRhythm } from '@legacy-library/sequenced-space'
 import { getLoopPointsData } from '@library/getLoopPointsData'
 import { getLoopWaveSample } from '@library/getLoopWaveSample'
 import { getLoopWaveSamples } from '@library/getLoopWaveSamples'
@@ -31,6 +32,49 @@ interface LoopDiagramFrameProps {
 function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameIndex, frameCount } = props
   const frameStamp = frameIndex / frameCount
+  const phaseAngleBaseValues = getRangeValues({
+    someRange: [0, Math.PI / 2],
+    someRhythm: getNaturalCompositeRhythm({
+      rhythmResolution: 7,
+      rhythmPhase: 0,
+      rhythmParts: [
+        {
+          rhythmDensity: 5,
+          rhythmPhase: 1,
+        },
+        {
+          rhythmDensity: 3,
+          rhythmPhase: 0,
+        },
+      ],
+    }),
+  })
+  const baseRotationAngleBaseValues = getRangeValues({
+    someRange: [Math.PI / 2, 0],
+    someRhythm: getNaturalCompositeRhythm({
+      rhythmResolution: 7,
+      rhythmPhase: 0,
+      rhythmParts: [
+        {
+          rhythmDensity: 3,
+          rhythmPhase: 0,
+        },
+      ],
+    }),
+  })
+  const baseRotationAngleScalarValues = getRangeValues({
+    someRange: [Math.PI / 3, Math.PI / 7],
+    someRhythm: getNaturalCompositeRhythm({
+      rhythmResolution: 11,
+      rhythmPhase: 0,
+      rhythmParts: [
+        {
+          rhythmDensity: 3,
+          rhythmPhase: 0,
+        },
+      ],
+    }),
+  })
   const baseLoopA: Loop = {
     loopType: 'parentRootLoop',
     childRotationAngle: 0,
@@ -41,16 +85,24 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     childLoop: {
       loopType: 'parentChildLoop',
       relativeDepth: 0.1,
-      relativeRadius: 0.9,
-      phaseAngle: Math.PI / 3,
-      baseRotationAngle: Math.PI / 3,
+      relativeRadius: 0.875,
+      phaseAngle: phaseAngleBaseValues[0]!,
+      baseRotationAngle: baseRotationAngleBaseValues[0]!,
       childRotationAngle: 0,
       childLoop: {
-        loopType: 'babyChildLoop',
-        relativeDepth: 0.3,
-        relativeRadius: 0.7,
-        phaseAngle: Math.PI / 5,
-        baseRotationAngle: Math.PI / 5,
+        loopType: 'parentChildLoop',
+        relativeDepth: 0.15,
+        relativeRadius: 0.9,
+        phaseAngle: phaseAngleBaseValues[1]!,
+        baseRotationAngle: baseRotationAngleBaseValues[1]!,
+        childRotationAngle: 0,
+        childLoop: {
+          loopType: 'babyChildLoop',
+          relativeDepth: 0.2,
+          relativeRadius: 0.95,
+          phaseAngle: phaseAngleBaseValues[2]!,
+          baseRotationAngle: baseRotationAngleBaseValues[2]!,
+        },
       },
     },
   }
@@ -67,7 +119,7 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
           Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
           childLoopBase.phaseAngle,
         baseRotationAngle:
-          (Math.PI / 3) *
+          baseRotationAngleScalarValues[childLoopIndex]! *
             getLoopWaveSample({
               someLoopPointsData: baseLoopPointsDataA,
               sampleAngle:
