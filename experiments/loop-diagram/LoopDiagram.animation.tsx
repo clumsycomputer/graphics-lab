@@ -1,8 +1,8 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import { getNaturalCompositeRhythm } from '@legacy-library/sequenced-space'
+import { getNormalizedAngle } from '@library/general'
 import { getLoopPointsData } from '@library/getLoopPointsData'
 import { getLoopWaveSample } from '@library/getLoopWaveSample'
-import { getLoopWaveSamples } from '@library/getLoopWaveSamples'
 import {
   BabyChildLoop,
   ChildLoop,
@@ -35,13 +35,9 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const phaseAngleBaseValues = getRangeValues({
     someRange: [0, Math.PI / 2],
     someRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 7,
+      rhythmResolution: 5,
       rhythmPhase: 0,
       rhythmParts: [
-        {
-          rhythmDensity: 5,
-          rhythmPhase: 1,
-        },
         {
           rhythmDensity: 3,
           rhythmPhase: 0,
@@ -63,7 +59,7 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     }),
   })
   const baseRotationAngleScalarValues = getRangeValues({
-    someRange: [Math.PI / 3, Math.PI / 7],
+    someRange: [Math.PI / 4, Math.PI / 11],
     someRhythm: getNaturalCompositeRhythm({
       rhythmResolution: 11,
       rhythmPhase: 0,
@@ -115,15 +111,20 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     getUpdatedChildLoop: ({ childLoopBase, childLoopIndex }) => {
       return {
         ...childLoopBase,
-        phaseAngle:
-          Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
-          childLoopBase.phaseAngle,
+        phaseAngle: getNormalizedAngle({
+          someAngle:
+            Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
+            childLoopBase.phaseAngle,
+        }),
         baseRotationAngle:
           baseRotationAngleScalarValues[childLoopIndex]! *
-            getLoopWaveSample({
+            getHarmonicLoopWaveSample({
               someLoopPointsData: baseLoopPointsDataA,
-              sampleAngle:
-                Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp,
+              sampleAngle: getNormalizedAngle({
+                someAngle:
+                  Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp,
+              }),
+              harmonicWeights: [1, 0.5],
             }) +
           childLoopBase.baseRotationAngle,
       }
@@ -133,9 +134,18 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     someLoop: loopA,
     sampleCount: 1024,
   })
-  const loopWaveSamplesA = getLoopWaveSamples({
+  const loopWaveSamplesA = getHarmonicLoopWaveSamples({
     someLoop: loopA,
     sampleCount: 1024,
+    harmonicWeights: [
+      1,
+      0.5 *
+        getLoopWaveSample({
+          someLoopPointsData: baseLoopPointsDataA,
+          sampleAngle: Math.PI * frameStamp,
+        }) +
+        0.2,
+    ],
   })
   return (
     <svg viewBox={`0 0 100 100`}>
@@ -245,4 +255,59 @@ function updateChildLoop(api: UpdateChildLoopApi): ChildLoop {
       })
       return updatedBabyChildLoop
   }
+}
+
+interface GetHarmonicLoopWaveSamplesApi {
+  someLoop: Loop
+  harmonicWeights: Array<number>
+  sampleCount: number
+}
+
+function getHarmonicLoopWaveSamples(api: GetHarmonicLoopWaveSamplesApi) {
+  const { someLoop, sampleCount, harmonicWeights } = api
+  const adjustedLoop = {
+    ...someLoop,
+    baseCircle: {
+      center: {
+        x: 0,
+        y: 0,
+      },
+      radius: 1,
+    },
+  }
+  const loopPointsData = getLoopPointsData({
+    sampleCount,
+    someLoop: adjustedLoop,
+  })
+  return loopPointsData.samplePoints.map((_, sampleIndex) =>
+    getHarmonicLoopWaveSample({
+      harmonicWeights,
+      someLoopPointsData: loopPointsData,
+      sampleAngle:
+        2 * Math.PI * (sampleIndex / loopPointsData.samplePoints.length),
+    })
+  )
+}
+
+interface GetHarmonicLoopSampleApi {
+  someLoopPointsData: ReturnType<typeof getLoopPointsData>
+  harmonicWeights: Array<number>
+  sampleAngle: number
+}
+
+function getHarmonicLoopWaveSample(api: GetHarmonicLoopSampleApi) {
+  const { someLoopPointsData, harmonicWeights, sampleAngle } = api
+  return harmonicWeights
+    .map((someHarmonicWeight, harmonicIndex) => {
+      return (
+        someHarmonicWeight *
+        getLoopWaveSample({
+          someLoopPointsData: someLoopPointsData,
+          sampleAngle: getNormalizedAngle({
+            someAngle: Math.pow(2, harmonicIndex) * sampleAngle,
+          }),
+        })
+      )
+    })
+    .reduce((result, someHarmonicSample) => result + someHarmonicSample, 0)
 }
