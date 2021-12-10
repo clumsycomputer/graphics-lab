@@ -1,10 +1,6 @@
-import {
-  getCirclePoint,
-  getIntersectionPoint,
-  getMidPointBetweenPoints,
-} from './general'
+import { getCirclePoint, getIntersectionPoint } from './general'
 import { getLoopPointsData } from './getLoopPointsData'
-import { LoopPoint, Point } from './models'
+import { Point } from './models/general'
 
 export interface GetTracePointDataApi {
   someLoopPointsData: ReturnType<typeof getLoopPointsData>
@@ -16,14 +12,16 @@ export function getTracePointData(
   api: GetTracePointDataApi
 ): [tracePoint: Point, traceIndex: number] {
   const { startingTracePointIndex, someLoopPointsData, traceAngle } = api
-  const adjustedTraceAngle =
-    traceAngle <
+  const minimumSampleCenterAngle =
     someLoopPointsData.samplePoints[startingTracePointIndex]!.centerAngle
-      ? someLoopPointsData.samplePoints[startingTracePointIndex]!.centerAngle
+  const adjustedTraceAngle = // workaround
+    traceAngle < minimumSampleCenterAngle
+      ? minimumSampleCenterAngle
       : traceAngle
   for (
     let traceIndex = startingTracePointIndex;
-    traceIndex < someLoopPointsData.samplePoints.length;
+    traceIndex <
+    someLoopPointsData.samplePoints.length + startingTracePointIndex;
     traceIndex++
   ) {
     const loopPointA = someLoopPointsData.samplePoints[traceIndex]!
@@ -42,11 +40,11 @@ export function getTracePointData(
           lineB: [
             someLoopPointsData.samplesCenter,
             getCirclePoint({
+              pointAngle: adjustedTraceAngle,
               someCircle: {
                 center: someLoopPointsData.samplesCenter,
-                radius: 1000000,
+                radius: 1000000, // some big number
               },
-              pointAngle: adjustedTraceAngle,
             }),
           ],
         }),

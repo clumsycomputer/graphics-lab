@@ -4,7 +4,8 @@ import {
   getNormalizedAngleBetweenPoints,
   getRotatedPoint,
 } from './general'
-import { Circle, Loop, Point } from './models'
+import { Circle, Point } from './models/general'
+import { Loop } from './models/Loop'
 
 export interface GetLoopPointApi {
   someLoop: Loop

@@ -1,14 +1,14 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import { getNaturalCompositeRhythm } from '@legacy-library/sequenced-space'
-import { getNormalizedAngle } from '@library/general'
-import { getLoopPointsData } from '@library/getLoopPointsData'
-import { getLoopWaveSample } from '@library/getLoopWaveSample'
 import {
-  BabyChildLoop,
-  ChildLoop,
+  getHarmonicLoopWaveSampleData,
+  getHarmonicLoopWaveSamples,
+  getLoopPointsData,
+  getLoopWaveSampleData,
+  getNormalizedAngle,
+  getUpdatedLoop,
   Loop,
-  ParentChildLoop,
-} from '@library/models'
+} from '@library/geometry'
 import React from 'react'
 
 const loopDiagramAnimationModule: AnimationModule = {
@@ -118,14 +118,15 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
         }),
         baseRotationAngle:
           baseRotationAngleScalarValues[childLoopIndex]! *
-            getHarmonicLoopWaveSample({
+            getHarmonicLoopWaveSampleData({
               someLoopPointsData: baseLoopPointsDataA,
-              sampleAngle: getNormalizedAngle({
+              harmonicDistribution: [1, 0.5],
+              startingTracePointIndices: [0, 0],
+              traceAngle: getNormalizedAngle({
                 someAngle:
                   Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp,
               }),
-              harmonicWeights: [1, 0.5],
-            }) +
+            })[0] +
           childLoopBase.baseRotationAngle,
       }
     },
@@ -137,14 +138,13 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const loopWaveSamplesA = getHarmonicLoopWaveSamples({
     someLoop: loopA,
     sampleCount: 1024,
-    harmonicWeights: [
+    harmonicDistribution: [
       1,
-      0.5 *
-        getLoopWaveSample({
-          someLoopPointsData: baseLoopPointsDataA,
-          sampleAngle: Math.PI * frameStamp,
-        }) +
-        0.2,
+      getLoopWaveSampleData({
+        someLoopPointsData: baseLoopPointsDataA,
+        traceAngle: Math.PI * frameStamp,
+        startingTracePointIndex: 0,
+      })[0] + 0.2,
     ],
   })
   return (
@@ -168,12 +168,12 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   )
 }
 
-interface GetRangeValuesApi {
-  someRange: [number, number]
+export interface GetRangeValuesApi {
+  someRange: [startValue: number, targetValue: number]
   someRhythm: Array<boolean>
 }
 
-function getRangeValues(api: GetRangeValuesApi) {
+export function getRangeValues(api: GetRangeValuesApi) {
   const { someRange, someRhythm } = api
   const rangeLength = someRange[1] - someRange[0]
   return someRhythm.reduce<Array<number>>((result, someCell, cellIndex) => {
@@ -183,131 +183,4 @@ function getRangeValues(api: GetRangeValuesApi) {
     }
     return result
   }, [])
-}
-
-interface GetUpdatedLoopApi {
-  baseLoop: Loop
-  getUpdatedChildLoop: <SomeChildLoop extends ChildLoop>(api: {
-    baseLoop: Loop
-    childLoopBase: SomeChildLoop extends ParentChildLoop
-      ? Omit<SomeChildLoop, 'childLoop'>
-      : SomeChildLoop extends BabyChildLoop
-      ? SomeChildLoop
-      : never
-    childLoopIndex: number
-  }) => SomeChildLoop extends ParentChildLoop
-    ? Omit<SomeChildLoop, 'childLoop'>
-    : SomeChildLoop extends BabyChildLoop
-    ? SomeChildLoop
-    : never
-}
-
-function getUpdatedLoop(api: GetUpdatedLoopApi): Loop {
-  const { baseLoop, getUpdatedChildLoop } = api
-  switch (baseLoop.loopType) {
-    case 'parentRootLoop':
-      const updatedChildLoop = updateChildLoop({
-        baseLoop,
-        getUpdatedChildLoop,
-        scopedLoop: baseLoop.childLoop,
-        childLoopIndex: 0,
-      })
-      return {
-        ...baseLoop,
-        childLoop: updatedChildLoop,
-      }
-    case 'soloRootLoop':
-      return {
-        ...baseLoop,
-      }
-  }
-}
-
-interface UpdateChildLoopApi
-  extends Pick<GetUpdatedLoopApi, 'baseLoop' | 'getUpdatedChildLoop'> {
-  scopedLoop: ChildLoop
-  childLoopIndex: number
-}
-
-function updateChildLoop(api: UpdateChildLoopApi): ChildLoop {
-  const { scopedLoop, getUpdatedChildLoop, baseLoop, childLoopIndex } = api
-  switch (scopedLoop.loopType) {
-    case 'parentChildLoop':
-      const updatedParentChildLoop = getUpdatedChildLoop({
-        baseLoop,
-        childLoopIndex,
-        childLoopBase: scopedLoop,
-      })
-      return {
-        ...updatedParentChildLoop,
-        childLoop: updateChildLoop({
-          baseLoop,
-          getUpdatedChildLoop,
-          scopedLoop: scopedLoop.childLoop,
-          childLoopIndex: childLoopIndex + 1,
-        }),
-      }
-    case 'babyChildLoop':
-      const updatedBabyChildLoop = getUpdatedChildLoop({
-        baseLoop,
-        childLoopIndex,
-        childLoopBase: scopedLoop,
-      })
-      return updatedBabyChildLoop
-  }
-}
-
-interface GetHarmonicLoopWaveSamplesApi {
-  someLoop: Loop
-  harmonicWeights: Array<number>
-  sampleCount: number
-}
-
-function getHarmonicLoopWaveSamples(api: GetHarmonicLoopWaveSamplesApi) {
-  const { someLoop, sampleCount, harmonicWeights } = api
-  const adjustedLoop = {
-    ...someLoop,
-    baseCircle: {
-      center: {
-        x: 0,
-        y: 0,
-      },
-      radius: 1,
-    },
-  }
-  const loopPointsData = getLoopPointsData({
-    sampleCount,
-    someLoop: adjustedLoop,
-  })
-  return loopPointsData.samplePoints.map((_, sampleIndex) =>
-    getHarmonicLoopWaveSample({
-      harmonicWeights,
-      someLoopPointsData: loopPointsData,
-      sampleAngle:
-        2 * Math.PI * (sampleIndex / loopPointsData.samplePoints.length),
-    })
-  )
-}
-
-interface GetHarmonicLoopSampleApi {
-  someLoopPointsData: ReturnType<typeof getLoopPointsData>
-  harmonicWeights: Array<number>
-  sampleAngle: number
-}
-
-function getHarmonicLoopWaveSample(api: GetHarmonicLoopSampleApi) {
-  const { someLoopPointsData, harmonicWeights, sampleAngle } = api
-  return harmonicWeights
-    .map((someHarmonicWeight, harmonicIndex) => {
-      return (
-        someHarmonicWeight *
-        getLoopWaveSample({
-          someLoopPointsData: someLoopPointsData,
-          sampleAngle: getNormalizedAngle({
-            someAngle: Math.pow(2, harmonicIndex) * sampleAngle,
-          }),
-        })
-      )
-    })
-    .reduce((result, someHarmonicSample) => result + someHarmonicSample, 0)
 }

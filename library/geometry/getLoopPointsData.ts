@@ -1,6 +1,7 @@
-import { getNormalizedAngleBetweenPoints } from './general'
+import { getNormalizedAngle, getNormalizedAngleBetweenPoints } from './general'
 import { getLoopPoint } from './getLoopPoint'
-import { Loop, LoopPoint, Point } from './models'
+import { LoopPoint, Point } from './models/general'
+import { Loop } from './models/Loop'
 
 export interface GetLoopPointsApi {
   someLoop: Loop
@@ -17,8 +18,8 @@ export function getLoopPointsData(api: GetLoopPointsApi): {
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
     const samplePoint = getLoopPoint({
       someLoop,
-      pointAngle: getAdjustedSampleAngle({
-        sampleAngle: 2 * Math.PI * (sampleIndex / sampleCount),
+      pointAngle: getNormalizedAngle({
+        someAngle: 2 * Math.PI * (sampleIndex / sampleCount) + 0.00001,
       }),
     })
     samplesCenter.x = samplesCenter.x + samplePoint.x
@@ -45,21 +46,4 @@ export function getLoopPointsData(api: GetLoopPointsApi): {
       return pointA.centerAngle - pointB.centerAngle
     }),
   }
-}
-
-interface GetAdjustedSampleAngleApi {
-  sampleAngle: number
-}
-
-function getAdjustedSampleAngle(api: GetAdjustedSampleAngleApi) {
-  const { sampleAngle } = api
-  return sampleAngle + 0.000001
-  //   const positiveSampleAngle =
-  //     ((sampleAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
-  //   return (positiveSampleAngle === 0 &&
-  //     positiveSampleAngle === (2 * Math.PI) / 4) ||
-  //     positiveSampleAngle === ((2 * Math.PI) / 4) * 3 ||
-  //     positiveSampleAngle === 2 * Math.PI
-  //     ? positiveSampleAngle + 0.000001
-  //     : positiveSampleAngle
 }
