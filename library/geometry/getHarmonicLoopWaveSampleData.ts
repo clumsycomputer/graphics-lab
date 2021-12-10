@@ -7,7 +7,7 @@ import {
 export interface GetHarmonicLoopWaveSampleDataApi
   extends Pick<GetLoopWaveSampleDataApi, 'someLoopPointsData' | 'traceAngle'> {
   harmonicDistribution: Array<number>
-  startingTracePointIndices: Array<number>
+  startingTracePointIndices: Array<ReturnType<typeof getLoopWaveSampleData>[1]>
 }
 
 export function getHarmonicLoopWaveSampleData(
@@ -19,12 +19,12 @@ export function getHarmonicLoopWaveSampleData(
     startingTracePointIndices,
     traceAngle,
   } = api
-  return harmonicDistribution.reduce<[number, Array<any>]>(
+  return harmonicDistribution.reduce<[number, Array<number>]>(
     (result, currentHarmonicWeight, harmonicIndex) => {
       const [currentLoopWaveSample, currentLoopWaveSampleTraceIndex] =
         getLoopWaveSampleData({
           someLoopPointsData,
-          startingTracePointIndex: 0, // startingTracePointIndices[harmonicIndex]!,
+          startingTracePointIndex: startingTracePointIndices[harmonicIndex]!,
           traceAngle: getNormalizedAngle({
             someAngle: Math.pow(2, harmonicIndex) * traceAngle,
           }),

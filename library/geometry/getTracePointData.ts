@@ -12,27 +12,19 @@ export function getTracePointData(
   api: GetTracePointDataApi
 ): [tracePoint: Point, traceIndex: number] {
   const { startingTracePointIndex, someLoopPointsData, traceAngle } = api
-  const minimumSampleCenterAngle =
-    someLoopPointsData.samplePoints[startingTracePointIndex]!.centerAngle
-  const adjustedTraceAngle = // workaround
-    traceAngle < minimumSampleCenterAngle
-      ? minimumSampleCenterAngle
-      : traceAngle
-  for (
-    let traceIndex = startingTracePointIndex;
-    traceIndex <
-    someLoopPointsData.samplePoints.length + startingTracePointIndex;
-    traceIndex++
-  ) {
-    const loopPointA = someLoopPointsData.samplePoints[traceIndex]!
-    const loopPointB =
-      someLoopPointsData.samplePoints[
-        (traceIndex + 1) % someLoopPointsData.samplePoints.length
-      ]!
+  const pointsCount = someLoopPointsData.samplePoints.length
+  let pointsTraced = 0
+  while (pointsTraced < pointsCount) {
+    const traceIndexA = (startingTracePointIndex + pointsTraced) % pointsCount
+    const traceIndexB = (traceIndexA + 1) % pointsCount
+    const loopPointA = someLoopPointsData.samplePoints[traceIndexA]!
+    const loopPointB = someLoopPointsData.samplePoints[traceIndexB]!
     if (
-      (adjustedTraceAngle >= loopPointA.centerAngle &&
-        adjustedTraceAngle <= loopPointB.centerAngle) ||
-      traceIndex === someLoopPointsData.samplePoints.length - 1
+      (traceAngle >= loopPointA.centerAngle &&
+        traceAngle <= loopPointB.centerAngle) ||
+      (loopPointA.centerAngle > loopPointB.centerAngle &&
+        (traceAngle >= loopPointA.centerAngle ||
+          traceAngle <= loopPointB.centerAngle))
     ) {
       return [
         getIntersectionPoint({
@@ -40,7 +32,7 @@ export function getTracePointData(
           lineB: [
             someLoopPointsData.samplesCenter,
             getCirclePoint({
-              pointAngle: adjustedTraceAngle,
+              pointAngle: traceAngle,
               someCircle: {
                 center: someLoopPointsData.samplesCenter,
                 radius: 1000000, // some big number
@@ -48,9 +40,10 @@ export function getTracePointData(
             }),
           ],
         }),
-        traceIndex,
+        traceIndexA,
       ]
     }
+    pointsTraced = pointsTraced + 1
   }
   throw new Error('wtf? getTracePointData')
 }

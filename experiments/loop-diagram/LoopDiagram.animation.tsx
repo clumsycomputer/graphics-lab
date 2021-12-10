@@ -120,7 +120,16 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
           baseRotationAngleScalarValues[childLoopIndex]! *
             getHarmonicLoopWaveSampleData({
               someLoopPointsData: baseLoopPointsDataA,
-              harmonicDistribution: [1, 0.5],
+              harmonicDistribution: [
+                1,
+                0.2 *
+                  getLoopWaveSampleData({
+                    someLoopPointsData: baseLoopPointsDataA,
+                    traceAngle: 2 * Math.PI * frameStamp,
+                    startingTracePointIndex: 0,
+                  })[0] +
+                  0.4,
+              ],
               startingTracePointIndices: [0, 0],
               traceAngle: getNormalizedAngle({
                 someAngle:
@@ -136,15 +145,17 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     sampleCount: 1024,
   })
   const loopWaveSamplesA = getHarmonicLoopWaveSamples({
-    someLoop: loopA,
+    someLoopPointsData: loopPointsDataA,
     sampleCount: 1024,
     harmonicDistribution: [
       1,
-      getLoopWaveSampleData({
-        someLoopPointsData: baseLoopPointsDataA,
-        traceAngle: Math.PI * frameStamp,
-        startingTracePointIndex: 0,
-      })[0] + 0.2,
+      0.2 *
+        getLoopWaveSampleData({
+          someLoopPointsData: loopPointsDataA,
+          traceAngle: 2 * Math.PI * frameStamp,
+          startingTracePointIndex: 0,
+        })[0] +
+        0.4,
     ],
   })
   return (

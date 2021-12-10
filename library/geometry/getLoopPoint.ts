@@ -1,3 +1,4 @@
+import { getNormalizedAngle } from '.'
 import {
   getCirclePoint,
   getDistanceBetweenPoints,
