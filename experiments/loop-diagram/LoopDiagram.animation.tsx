@@ -195,3 +195,37 @@ export function getRangeValues(api: GetRangeValuesApi) {
     return result
   }, [])
 }
+
+function getRhythmSpace(api: any) {}
+
+interface RhythmStructure {
+  containerResolution: number
+  rhythmSkeleton: RhythmSkeleton
+}
+
+type RhythmSkeleton = ContainerRhythmSkeleton | TerminalRhythmSkeleton
+
+interface ContainerRhythmSkeleton
+  extends RhythmBase<'containingSkeleton'>,
+    RhythmSkeletonBase,
+    ContainerRhythmSkeletonBase {}
+
+interface TerminalRhythmSkeleton
+  extends RhythmBase<'terminalSkeleton'>,
+    RhythmSkeletonBase {}
+
+// interface Skeleton
+
+interface ContainerRhythmSkeletonBase {
+  containerSkeleton: ContainerRhythmSkeleton | TerminalRhythmSkeleton
+  containerPhase: number
+}
+
+interface RhythmSkeletonBase {
+  skeletonDensity: number
+  skeletonPhase: number
+}
+
+interface RhythmBase<RhythmType extends string> {
+  rhythmType: RhythmType
+}
