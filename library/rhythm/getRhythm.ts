@@ -1,9 +1,5 @@
 import { getEuclideanRhythm } from './getEuclideanRhythm'
-import {
-  RootRhythmSkeleton,
-  ContainerRhythmSkeleton,
-  TerminalRhythmSkeleton,
-} from './models'
+import { Rhythm, RootRhythmSkeleton } from './models'
 
 interface GetRhythmApi {
   someRootRhythmSkeleton: RootRhythmSkeleton
@@ -12,6 +8,9 @@ interface GetRhythmApi {
 function getRhythm(api: GetRhythmApi) {
   const { someRootRhythmSkeleton } = api
   const rhythmIndices = getRhythmSkeletonIndices({})
+  return rhythmIndices.reduce<Rhythm>((rhythmResult, someRhythm) => {
+    return
+  }, new Array(someRootRhythmSkeleton.containerResolution).fill(false))
 }
 
 interface GetRhythmSkeletonIndicesApi {
@@ -22,20 +21,17 @@ function getRhythmSkeletonIndices(
   api: GetRhythmSkeletonIndicesApi
 ): Array<number> {
   const { someRootRhythmSkeleton } = api
-
   switch (someRootRhythmSkeleton.containerSkeleton.rhythmType) {
     case 'containerRhythmSkeleton':
-      break
+      const foo = getRhythmSkeletonIndices()
+      return
     case 'terminalRhythmSkeleton':
-      const terminalRhythmSkeletonBaseRhythm = getEuclideanRhythm({
-        lhsCount: someRootRhythmSkeleton.containerSkeleton.skeletonDensity,
-        rhsCount:
-          someRootRhythmSkeleton.containerResolution -
+      const baseTerminalSkeletonRhythm = getBaseSkeletonRhythm({
+        containerResolution: someRootRhythmSkeleton.containerResolution,
+        skeletonDensity:
           someRootRhythmSkeleton.containerSkeleton.skeletonDensity,
-        lhsRhythm: [true],
-        rhsRhythm: [false],
       })
-      return terminalRhythmSkeletonBaseRhythm
+      return baseTerminalSkeletonRhythm
         .reduce<Array<number>>(
           (
             baseSkeletonRhythmIndicesResult,
@@ -70,9 +66,7 @@ function getRhythmSkeletonIndices(
 
 interface GetBaseSkeletonRhythmApi {
   containerResolution: number
-  containerPhase: number
   skeletonDensity: number
-  skeletonPhase: number
 }
 
 function getBaseSkeletonRhythm(api: GetBaseSkeletonRhythmApi) {
