@@ -1,5 +1,4 @@
-export * from './models/general'
-export * from './models/Loop'
+export * from './models'
 export * from './general'
 export * from './getHarmonicLoopWaveSampleData'
 export * from './getHarmonicLoopWaveSamples'

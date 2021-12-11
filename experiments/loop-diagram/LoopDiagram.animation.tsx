@@ -9,7 +9,7 @@ import {
   getUpdatedLoop,
   Loop,
 } from '@library/geometry'
-import { RhythmSkeleton } from '@library/rhythm/models'
+import { getRhythmSkeletonBonesTable, RhythmStructure } from '@library/rhythm'
 import React from 'react'
 
 const loopDiagramAnimationModule: AnimationModule = {
@@ -159,9 +159,48 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
         0.4,
     ],
   })
+  // const rhythmStructureA: RhythmStructure = {
+  //   layerType: 'rootContainer',
+  //   containerResolution: 12,
+  //   containerPhase: 0,
+  //   layerSkeleton: {
+  //     layerType: 'containerSkeleton',
+  //     containerPhase: 0,
+  //     skeletonDensity: 7,
+  //     skeletonPhase: 0,
+  //     layerSkeleton: {
+  //       layerType: 'terminalSkeleton',
+  //       skeletonDensity: 3,
+  //       skeletonPhase: 0,
+  //     },
+  //   },
+  // }
+  // const skeletonBonesTableA = getRhythmSkeletonBonesTable({
+  //   someRhythmStructure: rhythmStructureA,
+  // })
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
+      {/* {skeletonBonesTableA
+        .map(([someSkeletonLayerRootBones], skeletonLayerIndex) => {
+          return someSkeletonLayerRootBones.map((someRootBone) => (
+            <circle
+              cx={
+                100 * (someRootBone / rhythmStructureA.containerResolution) +
+                100 / rhythmStructureA.containerResolution / 2
+              }
+              cy={50}
+              r={
+                (100 / rhythmStructureA.containerResolution / 2) *
+                ((skeletonLayerIndex + 1) / skeletonBonesTableA.length)
+              }
+              fillOpacity={0}
+              strokeWidth={0.2}
+              stroke={'white'}
+            />
+          ))
+        })
+        .flat()} */}
       <g transform={`translate(50, 25) scale(20, 20)`}>
         {loopPointsDataA.samplePoints.map((somePoint) => (
           <circle cx={somePoint.x} cy={somePoint.y} r={0.015} fill={'orange'} />

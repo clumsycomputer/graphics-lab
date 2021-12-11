@@ -1,30 +1,32 @@
 export type Rhythm = Array<boolean>
 
-export interface RootRhythmSkeleton
-  extends RhythmBase<'rootRhythmSkeleton'>,
-    ContainerRhythmSkeletonBase {
+export type RhythmStructure = RootContainerLayer
+
+export interface RootContainerLayer
+  extends RhythmLayerBase<'rootContainer'>,
+    SkeletonContainerBase {
   containerResolution: number
 }
 
-export interface ContainerRhythmSkeleton
-  extends RhythmBase<'containerRhythmSkeleton'>,
-    RhythmSkeletonBase,
-    ContainerRhythmSkeletonBase {}
+export interface ContainerSkeletonLayer
+  extends RhythmLayerBase<'containerSkeleton'>,
+    SkeletonContainerBase,
+    SkeletonBase {}
 
-export interface TerminalRhythmSkeleton
-  extends RhythmBase<'terminalRhythmSkeleton'>,
-    RhythmSkeletonBase {}
+export interface TerminalSkeletonLayer
+  extends RhythmLayerBase<'terminalSkeleton'>,
+    SkeletonBase {}
 
-interface ContainerRhythmSkeletonBase {
-  containerSkeleton: ContainerRhythmSkeleton | TerminalRhythmSkeleton
+interface SkeletonContainerBase {
   containerPhase: number
+  layerSkeleton: ContainerSkeletonLayer | TerminalSkeletonLayer
 }
 
-interface RhythmSkeletonBase {
+interface SkeletonBase {
   skeletonDensity: number
   skeletonPhase: number
 }
 
-interface RhythmBase<RhythmType extends string> {
-  rhythmType: RhythmType
+interface RhythmLayerBase<LayerType extends string> {
+  layerType: LayerType
 }
