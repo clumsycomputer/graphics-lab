@@ -1,15 +1,14 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
-import { getNaturalCompositeRhythm } from '@legacy-library/sequenced-space'
 import {
   getHarmonicLoopWaveSampleData,
-  getHarmonicLoopWaveSamples,
   getLoopPointsData,
   getLoopWaveSampleData,
+  getLoopWaveSamples,
   getNormalizedAngle,
   getUpdatedLoop,
   Loop,
 } from '@library/geometry'
-import { getRhythmSkeletonBonesTable, RhythmStructure } from '@library/rhythm'
+import { getRangedRhythmValues, getStructuredRhythmMap } from '@library/rhythm'
 import React from 'react'
 
 const loopDiagramAnimationModule: AnimationModule = {
@@ -33,43 +32,58 @@ interface LoopDiagramFrameProps {
 function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   const { frameIndex, frameCount } = props
   const frameStamp = frameIndex / frameCount
-  const phaseAngleBaseValues = getRangeValues({
-    someRange: [0, Math.PI / 2],
-    someRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 5,
-      rhythmPhase: 0,
-      rhythmParts: [
-        {
-          rhythmDensity: 3,
-          rhythmPhase: 0,
+  const phaseAngleBaseValues = getRangedRhythmValues({
+    someNumberRange: {
+      startValue: 0,
+      targetValue: Math.PI / 2,
+    },
+    someRhythmMap: getStructuredRhythmMap({
+      someRhythmStructure: {
+        structureType: 'rootStructure',
+        containerResolution: 5,
+        containerPhase: 0,
+        layerStructure: {
+          structureType: 'leafStructure',
+          skeletonDensity: 3,
+          skeletonPhase: 0,
         },
-      ],
+      },
     }),
   })
-  const baseRotationAngleBaseValues = getRangeValues({
-    someRange: [Math.PI / 2, 0],
-    someRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 7,
-      rhythmPhase: 0,
-      rhythmParts: [
-        {
-          rhythmDensity: 3,
-          rhythmPhase: 0,
+  const baseRotationAngleBaseValues = getRangedRhythmValues({
+    someNumberRange: {
+      startValue: Math.PI / 2,
+      targetValue: 0,
+    },
+    someRhythmMap: getStructuredRhythmMap({
+      someRhythmStructure: {
+        structureType: 'rootStructure',
+        containerResolution: 7,
+        containerPhase: 0,
+        layerStructure: {
+          structureType: 'leafStructure',
+          skeletonDensity: 3,
+          skeletonPhase: 0,
         },
-      ],
+      },
     }),
   })
-  const baseRotationAngleScalarValues = getRangeValues({
-    someRange: [Math.PI / 4, Math.PI / 11],
-    someRhythm: getNaturalCompositeRhythm({
-      rhythmResolution: 11,
-      rhythmPhase: 0,
-      rhythmParts: [
-        {
-          rhythmDensity: 3,
-          rhythmPhase: 0,
+  const baseRotationAngleScalarValues = getRangedRhythmValues({
+    someNumberRange: {
+      startValue: Math.PI / 4,
+      targetValue: Math.PI / 11,
+    },
+    someRhythmMap: getStructuredRhythmMap({
+      someRhythmStructure: {
+        structureType: 'rootStructure',
+        containerResolution: 11,
+        containerPhase: 0,
+        layerStructure: {
+          structureType: 'leafStructure',
+          skeletonDensity: 3,
+          skeletonPhase: 0,
         },
-      ],
+      },
     }),
   })
   const baseLoopA: Loop = {
@@ -145,19 +159,9 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     someLoop: loopA,
     sampleCount: 1024,
   })
-  const loopWaveSamplesA = getHarmonicLoopWaveSamples({
+  const loopWaveSamplesA = getLoopWaveSamples({
     someLoopPointsData: loopPointsDataA,
     sampleCount: 1024,
-    harmonicDistribution: [
-      1,
-      0.2 *
-        getLoopWaveSampleData({
-          someLoopPointsData: loopPointsDataA,
-          traceAngle: 2 * Math.PI * frameStamp,
-          startingTracePointIndex: 0,
-        })[0] +
-        0.4,
-    ],
   })
   // const rhythmStructureA: RhythmStructure = {
   //   layerType: 'rootContainer',
@@ -217,21 +221,4 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
       ))}
     </svg>
   )
-}
-
-export interface GetRangeValuesApi {
-  someRange: [startValue: number, targetValue: number]
-  someRhythm: Array<boolean>
-}
-
-export function getRangeValues(api: GetRangeValuesApi) {
-  const { someRange, someRhythm } = api
-  const rangeLength = someRange[1] - someRange[0]
-  return someRhythm.reduce<Array<number>>((result, someCell, cellIndex) => {
-    if (someCell === true) {
-      const cellStamp = cellIndex / someRhythm.length
-      result.push(rangeLength * cellStamp)
-    }
-    return result
-  }, [])
 }
