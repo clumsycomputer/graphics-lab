@@ -222,3 +222,20 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     </svg>
   )
 }
+
+interface LoopDisplayProps {
+  someLoop: Loop
+  targetRectangle: Rectangle
+}
+
+interface Rectangle {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+function LoopDisplay(props: LoopDisplayProps) {
+  const { someLoop } = props
+  return null
+}

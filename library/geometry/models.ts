@@ -12,44 +12,35 @@ export interface LoopPoint extends Point {
   centerAngle: number
 }
 
-export type Loop = RootLoop
+export type LoopStructure = RootLoopStructure
 
-export type RootLoop = SoloRootLoop | ParentRootLoop
-
-export interface SoloRootLoop extends LoopBase<'soloRootLoop'>, RootLoopBase {}
-
-export interface ParentRootLoop
-  extends LoopBase<'parentRootLoop'>,
-    RootLoopBase,
-    ParentLoopBase {}
-
-interface RootLoopBase {
-  baseCircle: Circle
+export interface RootLoopStructure
+  extends LoopStructureBase<'rootStructure'>,
+    BaseLoopStructureBase {
+  structureBase: Circle
 }
 
-export type ChildLoop = ParentChildLoop | BabyChildLoop
+export interface BranchLoopStructure
+  extends LoopStructureBase<'branchStructure'>,
+    BaseLoopStructureBase,
+    SkeletonLoopStructureBase {}
 
-export interface ParentChildLoop
-  extends LoopBase<'parentChildLoop'>,
-    ParentLoopBase,
-    ChildLoopBase {}
+export interface LeafLoopStructure
+  extends LoopStructureBase<'leafStructure'>,
+    SkeletonLoopStructureBase {}
 
-export interface BabyChildLoop
-  extends LoopBase<'babyChildLoop'>,
-    ChildLoopBase {}
+interface BaseLoopStructureBase {
+  skeletonStructure: BranchLoopStructure | LeafLoopStructure
+  skeletonStructureRotationAngle: number
+}
 
-interface ChildLoopBase {
-  relativeDepth: number
-  relativeRadius: number
-  phaseAngle: number
+interface SkeletonLoopStructureBase {
+  relativeFoundationDepth: number
+  relativeFoundationRadius: number
+  foundationPhaseAngle: number
   baseRotationAngle: number
 }
 
-interface ParentLoopBase {
-  childLoop: ChildLoop
-  childRotationAngle: number
-}
-
-interface LoopBase<LoopType extends string> {
-  loopType: LoopType
+interface LoopStructureBase<StructureType extends string> {
+  structureType: StructureType
 }

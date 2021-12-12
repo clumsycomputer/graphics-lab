@@ -7,31 +7,31 @@ export interface RhythmMap {
   rhythmSkeleton: RhythmSkeleton
 }
 
-export type RhythmStructure = RootContainerLayer
+export type RhythmStructure = RootRhythmStructure
 
-export interface RootContainerLayer
+export interface RootRhythmStructure
   extends RhythmStructureBase<'rootStructure'>,
-    SkeletonContainerBase {
-  containerResolution: number
+    SkeletonRhythmStructureBase {
+  structureResolution: number
 }
 
-export interface ContainerSkeletonLayer
+export interface BranchRhythmStructure
   extends RhythmStructureBase<'branchStructure'>,
-    SkeletonContainerBase,
-    SkeletonStructureBase {}
+    ContainerRhythmStructureBase,
+    SkeletonRhythmStructureBase {}
 
-export interface TerminalSkeletonLayer
+export interface LeafRhythmStructure
   extends RhythmStructureBase<'leafStructure'>,
-    SkeletonStructureBase {}
+    SkeletonRhythmStructureBase {}
 
-interface SkeletonContainerBase {
-  containerPhase: number
-  layerStructure: ContainerSkeletonLayer | TerminalSkeletonLayer
+interface ContainerRhythmStructureBase {
+  skeletonStructure: BranchRhythmStructure | LeafRhythmStructure
+  skeletonStructurePhase: number
 }
 
-interface SkeletonStructureBase {
-  skeletonDensity: number
-  skeletonPhase: number
+interface SkeletonRhythmStructureBase {
+  boneDensity: number
+  bonePhase: number
 }
 
 interface RhythmStructureBase<StructureType extends string> {
@@ -39,6 +39,6 @@ interface RhythmStructureBase<StructureType extends string> {
 }
 
 export interface BasicRhythmStructure
-  extends Pick<RootContainerLayer, 'containerResolution'>,
-    Pick<SkeletonContainerBase, 'containerPhase'>,
-    SkeletonStructureBase {}
+  extends Pick<RootRhythmStructure, 'structureResolution'>,
+    Pick<ContainerRhythmStructureBase, 'skeletonStructurePhase'>,
+    SkeletonRhythmStructureBase {}
