@@ -1,6 +1,6 @@
 import { getCirclePoint, getIntersectionPoint } from './general'
 import { getLoopPointsData } from './getLoopPointsData'
-import { Point } from './models/general'
+import { Point } from './models'
 
 export interface GetTracePointDataApi {
   someLoopPointsData: ReturnType<typeof getLoopPointsData>

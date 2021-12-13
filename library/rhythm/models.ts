@@ -1,3 +1,9 @@
+import {
+  InterposedSpatialStructureBase,
+  RecursiveSpatialStructure,
+  TerminalSpatialStructureBase,
+} from '@library/general'
+
 export type Rhythm = Array<boolean>
 
 export type RhythmSkeleton = Array<number>
@@ -7,38 +13,36 @@ export interface RhythmMap {
   rhythmSkeleton: RhythmSkeleton
 }
 
-export type RhythmStructure = RootRhythmStructure
-
-export interface RootRhythmStructure
-  extends RhythmStructureBase<'rootStructure'>,
-    SkeletonRhythmStructureBase {
-  structureResolution: number
+export interface RhythmStructure
+  extends RecursiveSpatialStructure<
+      InterposedRhythmStructure,
+      TerminalRhythmStructure
+    >,
+    BaseRhythmStructureBase {
+  rhythmResolution: number
 }
 
-export interface BranchRhythmStructure
-  extends RhythmStructureBase<'branchStructure'>,
-    ContainerRhythmStructureBase,
-    SkeletonRhythmStructureBase {}
+export interface InterposedRhythmStructure
+  extends InterposedSpatialStructureBase<
+      InterposedRhythmStructure | TerminalRhythmStructure
+    >,
+    BaseRhythmStructureBase,
+    SubRhythmStructureBase {}
 
-export interface LeafRhythmStructure
-  extends RhythmStructureBase<'leafStructure'>,
-    SkeletonRhythmStructureBase {}
+export interface TerminalRhythmStructure
+  extends TerminalSpatialStructureBase,
+    SubRhythmStructureBase {}
 
-interface ContainerRhythmStructureBase {
-  skeletonStructure: BranchRhythmStructure | LeafRhythmStructure
-  skeletonStructurePhase: number
+interface BaseRhythmStructureBase {
+  rhythmPhase: number
 }
 
-interface SkeletonRhythmStructureBase {
-  boneDensity: number
-  bonePhase: number
-}
-
-interface RhythmStructureBase<StructureType extends string> {
-  structureType: StructureType
+interface SubRhythmStructureBase {
+  rhythmDensity: number
+  rhythmOrientation: number
 }
 
 export interface BasicRhythmStructure
-  extends Pick<RootRhythmStructure, 'structureResolution'>,
-    Pick<ContainerRhythmStructureBase, 'skeletonStructurePhase'>,
-    SkeletonRhythmStructureBase {}
+  extends Pick<RhythmStructure, 'rhythmResolution'>,
+    Pick<BaseRhythmStructureBase, 'rhythmPhase'>,
+    SubRhythmStructureBase {}

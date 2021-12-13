@@ -5,8 +5,10 @@ import {
   getLoopWaveSampleData,
   getLoopWaveSamples,
   getNormalizedAngle,
-  getUpdatedLoop,
-  Loop,
+  getUpdatedLoopStructure,
+  InterposedLoopStructure,
+  LoopStructure,
+  TerminalLoopStructure,
 } from '@library/geometry'
 import { getRangedRhythmValues, getStructuredRhythmMap } from '@library/rhythm'
 import React from 'react'
@@ -39,13 +41,13 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     },
     someRhythmMap: getStructuredRhythmMap({
       someRhythmStructure: {
-        structureType: 'rootStructure',
-        containerResolution: 5,
-        containerPhase: 0,
-        layerStructure: {
-          structureType: 'leafStructure',
-          skeletonDensity: 3,
-          skeletonPhase: 0,
+        structureType: 'initialStructure',
+        rhythmResolution: 5,
+        rhythmPhase: 0,
+        subStructure: {
+          structureType: 'terminalStructure',
+          rhythmDensity: 3,
+          rhythmOrientation: 0,
         },
       },
     }),
@@ -57,13 +59,13 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     },
     someRhythmMap: getStructuredRhythmMap({
       someRhythmStructure: {
-        structureType: 'rootStructure',
-        containerResolution: 7,
-        containerPhase: 0,
-        layerStructure: {
-          structureType: 'leafStructure',
-          skeletonDensity: 3,
-          skeletonPhase: 0,
+        structureType: 'initialStructure',
+        rhythmResolution: 7,
+        rhythmPhase: 0,
+        subStructure: {
+          structureType: 'terminalStructure',
+          rhythmDensity: 3,
+          rhythmOrientation: 0,
         },
       },
     }),
@@ -75,83 +77,76 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     },
     someRhythmMap: getStructuredRhythmMap({
       someRhythmStructure: {
-        structureType: 'rootStructure',
-        containerResolution: 11,
-        containerPhase: 0,
-        layerStructure: {
-          structureType: 'leafStructure',
-          skeletonDensity: 3,
-          skeletonPhase: 0,
+        structureType: 'initialStructure',
+        rhythmResolution: 11,
+        rhythmPhase: 0,
+        subStructure: {
+          structureType: 'terminalStructure',
+          rhythmDensity: 3,
+          rhythmOrientation: 0,
         },
       },
     }),
   })
-  const baseLoopA: Loop = {
-    loopType: 'parentRootLoop',
-    childRotationAngle: 0,
-    baseCircle: {
+  const baseLoopStructureA: LoopStructure = {
+    structureType: 'initialStructure',
+    loopBase: {
       center: { x: 0, y: 0 },
       radius: 1,
     },
-    childLoop: {
-      loopType: 'parentChildLoop',
-      relativeDepth: 0.1,
-      relativeRadius: 0.875,
-      phaseAngle: phaseAngleBaseValues[0]!,
-      baseRotationAngle: baseRotationAngleBaseValues[0]!,
-      childRotationAngle: 0,
-      childLoop: {
-        loopType: 'parentChildLoop',
-        relativeDepth: 0.15,
-        relativeRadius: 0.9,
-        phaseAngle: phaseAngleBaseValues[1]!,
-        baseRotationAngle: baseRotationAngleBaseValues[1]!,
-        childRotationAngle: 0,
-        childLoop: {
-          loopType: 'babyChildLoop',
-          relativeDepth: 0.2,
-          relativeRadius: 0.95,
-          phaseAngle: phaseAngleBaseValues[2]!,
-          baseRotationAngle: baseRotationAngleBaseValues[2]!,
+    subLoopRotationAngle: 0,
+    subStructure: {
+      structureType: 'interposedStructure',
+      relativeFoundationDepth: 0.1,
+      relativeFoundationRadius: 0.875,
+      foundationPhaseAngle: phaseAngleBaseValues[0]!,
+      baseOrientationAngle: baseRotationAngleBaseValues[0]!,
+      subLoopRotationAngle: 0,
+      subStructure: {
+        structureType: 'interposedStructure',
+        relativeFoundationDepth: 0.15,
+        relativeFoundationRadius: 0.9,
+        foundationPhaseAngle: phaseAngleBaseValues[1]!,
+        baseOrientationAngle: baseRotationAngleBaseValues[1]!,
+        subLoopRotationAngle: 0,
+        subStructure: {
+          structureType: 'terminalStructure',
+          relativeFoundationDepth: 0.2,
+          relativeFoundationRadius: 0.95,
+          foundationPhaseAngle: phaseAngleBaseValues[2]!,
+          baseOrientationAngle: baseRotationAngleBaseValues[2]!,
         },
       },
     },
   }
   const baseLoopPointsDataA = getLoopPointsData({
-    someLoop: baseLoopA,
+    someLoopStructure: baseLoopA,
     sampleCount: 1024,
   })
-  const loopA = getUpdatedLoop({
-    baseLoop: baseLoopA,
-    getUpdatedChildLoop: ({ childLoopBase, childLoopIndex }) => {
-      return {
-        ...childLoopBase,
-        phaseAngle: getNormalizedAngle({
-          someAngle:
-            Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp +
-            childLoopBase.phaseAngle,
-        }),
-        baseRotationAngle:
-          baseRotationAngleScalarValues[childLoopIndex]! *
-            getHarmonicLoopWaveSampleData({
-              someLoopPointsData: baseLoopPointsDataA,
-              harmonicDistribution: [
-                1,
-                0.2 *
-                  getLoopWaveSampleData({
-                    someLoopPointsData: baseLoopPointsDataA,
-                    traceAngle: 2 * Math.PI * frameStamp,
-                    startingTracePointIndex: 0,
-                  })[0] +
-                  0.4,
-              ],
-              startingTracePointIndices: [0, 0],
-              traceAngle: getNormalizedAngle({
-                someAngle:
-                  Math.pow(2, childLoopIndex + 1) * Math.PI * frameStamp,
-              }),
-            })[0] +
-          childLoopBase.baseRotationAngle,
+  const loopA = getUpdatedLoopStructure({
+    baseStructure: baseLoopStructureA,
+    getScopedStructureUpdates: ({ scopedStructureBase }) => {
+      switch (scopedStructureBase.structureType) {
+        case 'initialStructure':
+          return {
+            loopBase: scopedStructureBase.loopBase,
+            subLoopRotationAngle: scopedStructureBase.subLoopRotationAngle,
+          } // as Omit<LoopStructure, 'structureType'>
+        case 'interposedStructure':
+          return {
+            subLoopRotationAngle: scopedStructureBase.subLoopRotationAngle,
+            foundationPhaseAngle: 0,
+            relativeFoundationDepth: 0,
+            relativeFoundationRadius: 0,
+            baseOrientationAngle: 0,
+          } // as Omit<InterposedLoopStructure, 'subStructure' | 'structureType'>
+        case 'terminalStructure':
+          return {
+            foundationPhaseAngle: 0,
+            relativeFoundationDepth: 0,
+            relativeFoundationRadius: 0,
+            baseOrientationAngle: 0,
+          } // as Omit<TerminalLoopStructure, 'structureType'>
       }
     },
   })
@@ -223,19 +218,19 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
   )
 }
 
-interface LoopDisplayProps {
-  someLoop: Loop
-  targetRectangle: Rectangle
-}
+// interface LoopDisplayProps {
+//   someLoop: Loop
+//   targetRectangle: Rectangle
+// }
 
-interface Rectangle {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+// interface Rectangle {
+//   x: number
+//   y: number
+//   width: number
+//   height: number
+// }
 
-function LoopDisplay(props: LoopDisplayProps) {
-  const { someLoop } = props
-  return null
-}
+// function LoopDisplay(props: LoopDisplayProps) {
+//   const { someLoop } = props
+//   return null
+// }

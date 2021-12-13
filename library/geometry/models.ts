@@ -1,3 +1,9 @@
+import {
+  InterposedSpatialStructureBase,
+  RecursiveSpatialStructure,
+  TerminalSpatialStructureBase,
+} from '@library/general'
+
 export interface Circle {
   center: Point
   radius: number
@@ -12,35 +18,33 @@ export interface LoopPoint extends Point {
   centerAngle: number
 }
 
-export type LoopStructure = RootLoopStructure
-
-export interface RootLoopStructure
-  extends LoopStructureBase<'rootStructure'>,
+export interface LoopStructure
+  extends RecursiveSpatialStructure<
+      InterposedLoopStructure,
+      TerminalLoopStructure
+    >,
     BaseLoopStructureBase {
-  structureBase: Circle
+  loopBase: Circle
 }
 
-export interface BranchLoopStructure
-  extends LoopStructureBase<'branchStructure'>,
+export interface InterposedLoopStructure
+  extends InterposedSpatialStructureBase<
+      InterposedLoopStructure | TerminalLoopStructure
+    >,
     BaseLoopStructureBase,
-    SkeletonLoopStructureBase {}
+    SubLoopStructureBase {}
 
-export interface LeafLoopStructure
-  extends LoopStructureBase<'leafStructure'>,
-    SkeletonLoopStructureBase {}
+export interface TerminalLoopStructure
+  extends TerminalSpatialStructureBase,
+    SubLoopStructureBase {}
 
 interface BaseLoopStructureBase {
-  skeletonStructure: BranchLoopStructure | LeafLoopStructure
-  skeletonStructureRotationAngle: number
+  subLoopRotationAngle: number
 }
 
-interface SkeletonLoopStructureBase {
+interface SubLoopStructureBase {
   relativeFoundationDepth: number
   relativeFoundationRadius: number
   foundationPhaseAngle: number
-  baseRotationAngle: number
-}
-
-interface LoopStructureBase<StructureType extends string> {
-  structureType: StructureType
+  baseOrientationAngle: number
 }
