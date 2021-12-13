@@ -1,7 +1,7 @@
-import { GetLoopWaveSampleDataApi } from '.'
-import { getLoopPointsData } from './getLoopPointsData'
-import { getLoopWaveSampleData } from './getLoopWaveSampleData'
-import { Loop } from './models/Loop'
+import {
+  getLoopWaveSampleData,
+  GetLoopWaveSampleDataApi,
+} from './getLoopWaveSampleData'
 
 export interface GetLoopWaveSamplesApi
   extends Pick<GetLoopWaveSampleDataApi, 'someLoopPointsData'> {

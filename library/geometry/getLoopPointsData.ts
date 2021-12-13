@@ -1,10 +1,10 @@
 import { getNormalizedAngleBetweenPoints } from './general'
+import { GetLoopPointApi } from './getLoopPoint'
 import { getNearestLoopPoint } from './getNearestLoopPoint'
-import { LoopPoint, Point } from './models/general'
-import { Loop } from './models/Loop'
+import { LoopPoint, Point } from './models'
 
-export interface GetLoopPointsApi {
-  someLoop: Loop
+export interface GetLoopPointsApi
+  extends Pick<GetLoopPointApi, 'someLoopStructure'> {
   sampleCount: number
 }
 
@@ -12,12 +12,12 @@ export function getLoopPointsData(api: GetLoopPointsApi): {
   samplesCenter: Point
   samplePoints: Array<LoopPoint>
 } {
-  const { sampleCount, someLoop } = api
+  const { sampleCount, someLoopStructure } = api
   const samplePoints: Array<Point> = []
   const samplesCenter: Point = { x: 0, y: 0 }
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
     const samplePoint = getNearestLoopPoint({
-      someLoop,
+      someLoopStructure,
       pointAngle: 2 * Math.PI * (sampleIndex / sampleCount),
     })
     samplesCenter.x = samplesCenter.x + samplePoint.x

@@ -1,4 +1,4 @@
-import { getRhythmSkeletonLayersData } from './getRhythmSkeletonLayersData'
+import { getRhythmStructuresData } from './getRhythmStructuresData'
 import { RhythmMap, RhythmStructure } from './models'
 
 export interface GetStructuredRhythmMapApi {
@@ -9,11 +9,11 @@ export function getStructuredRhythmMap(
   api: GetStructuredRhythmMapApi
 ): RhythmMap {
   const { someRhythmStructure } = api
-  const rhythmSkeletonLayersData = getRhythmSkeletonLayersData({
+  const rhythmStructuresData = getRhythmStructuresData({
     someRhythmStructure,
   })
   return {
-    rhythmResolution: someRhythmStructure.containerResolution,
-    rhythmSkeleton: rhythmSkeletonLayersData[0]!.layerSkeleton,
+    rhythmResolution: someRhythmStructure.rhythmResolution,
+    rhythmPoints: rhythmStructuresData[0]!.structurePoints,
   }
 }

@@ -14,7 +14,7 @@ export function getRangedRhythmValues(
   const { someNumberRange, someRhythmMap } = api
   const rangeVector = someNumberRange.targetValue - someNumberRange.startValue
   const rangeValueStep = rangeVector / someRhythmMap.rhythmResolution
-  return someRhythmMap.rhythmSkeleton.map(
+  return someRhythmMap.rhythmPoints.map(
     (someRhythmBone) =>
       someRhythmBone * rangeValueStep + someNumberRange.startValue
   )

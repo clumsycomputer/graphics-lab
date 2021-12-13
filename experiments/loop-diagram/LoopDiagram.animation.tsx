@@ -6,9 +6,7 @@ import {
   getLoopWaveSamples,
   getNormalizedAngle,
   getUpdatedLoopStructure,
-  InterposedLoopStructure,
   LoopStructure,
-  TerminalLoopStructure,
 } from '@library/geometry'
 import { getRangedRhythmValues, getStructuredRhythmMap } from '@library/rhythm'
 import React from 'react'
@@ -120,38 +118,51 @@ function LoopDiagramFrame(props: LoopDiagramFrameProps) {
     },
   }
   const baseLoopPointsDataA = getLoopPointsData({
-    someLoopStructure: baseLoopA,
+    someLoopStructure: baseLoopStructureA,
     sampleCount: 1024,
   })
-  const loopA = getUpdatedLoopStructure({
+  const loopStructureA = getUpdatedLoopStructure({
     baseStructure: baseLoopStructureA,
-    getScopedStructureUpdates: ({ scopedStructureBase }) => {
+    getScopedStructureUpdates: ({ scopedStructureBase, structureIndex }) => {
       switch (scopedStructureBase.structureType) {
         case 'initialStructure':
-          return {
-            loopBase: scopedStructureBase.loopBase,
-            subLoopRotationAngle: scopedStructureBase.subLoopRotationAngle,
-          } // as Omit<LoopStructure, 'structureType'>
+          return scopedStructureBase
         case 'interposedStructure':
-          return {
-            subLoopRotationAngle: scopedStructureBase.subLoopRotationAngle,
-            foundationPhaseAngle: 0,
-            relativeFoundationDepth: 0,
-            relativeFoundationRadius: 0,
-            baseOrientationAngle: 0,
-          } // as Omit<InterposedLoopStructure, 'subStructure' | 'structureType'>
         case 'terminalStructure':
           return {
-            foundationPhaseAngle: 0,
-            relativeFoundationDepth: 0,
-            relativeFoundationRadius: 0,
-            baseOrientationAngle: 0,
-          } // as Omit<TerminalLoopStructure, 'structureType'>
+            ...scopedStructureBase,
+            foundationPhaseAngle: getNormalizedAngle({
+              someAngle:
+                Math.pow(2, structureIndex) * Math.PI * frameStamp +
+                scopedStructureBase.foundationPhaseAngle,
+            }),
+            baseOrientationAngle:
+              baseRotationAngleScalarValues[structureIndex - 1]! *
+                getHarmonicLoopWaveSampleData({
+                  someLoopPointsData: baseLoopPointsDataA,
+                  harmonicDistribution: [
+                    1,
+                    0.2 *
+                      getLoopWaveSampleData({
+                        someLoopPointsData: baseLoopPointsDataA,
+                        traceAngle: 2 * Math.PI * frameStamp,
+                        startingTracePointIndex: 0,
+                      })[0] +
+                      0.4,
+                  ],
+                  startingTracePointIndices: [0, 0],
+                  traceAngle: getNormalizedAngle({
+                    someAngle:
+                      Math.pow(2, structureIndex) * Math.PI * frameStamp,
+                  }),
+                })[0] +
+              scopedStructureBase.baseOrientationAngle,
+          }
       }
     },
   })
   const loopPointsDataA = getLoopPointsData({
-    someLoop: loopA,
+    someLoopStructure: loopStructureA,
     sampleCount: 1024,
   })
   const loopWaveSamplesA = getLoopWaveSamples({

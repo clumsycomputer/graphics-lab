@@ -6,11 +6,10 @@ import {
 
 export type Rhythm = Array<boolean>
 
-export type RhythmSkeleton = Array<number>
+export type RhythmPoints = Array<number>
 
-export interface RhythmMap {
-  rhythmResolution: number
-  rhythmSkeleton: RhythmSkeleton
+export interface RhythmMap extends Pick<RhythmStructure, 'rhythmResolution'> {
+  rhythmPoints: RhythmPoints
 }
 
 export interface RhythmStructure

@@ -9,25 +9,22 @@ export interface GetUpdatedRecursiveSpatialStructureApi<
   BaseRecursiveSpatialStructure extends RecursiveSpatialStructure
 > {
   baseStructure: BaseRecursiveSpatialStructure
-  getScopedStructureUpdates: <
-    CurrentScopedStructure extends
+  getScopedStructureUpdates: (api: {
+    baseStructure: BaseRecursiveSpatialStructure
+    scopedStructureBase:
       | BaseRecursiveSpatialStructure
       | BaseRecursiveSpatialStructure['subStructure']
-  >(api: {
-    baseStructure: BaseRecursiveSpatialStructure
-    scopedStructureBase: CurrentScopedStructure
     structureIndex: number
   }) => ScopedStructureUpdates<
-    BaseRecursiveSpatialStructure,
-    CurrentScopedStructure
+    | BaseRecursiveSpatialStructure
+    | BaseRecursiveSpatialStructure['subStructure']
   >
 }
 
 type ScopedStructureUpdates<
-  BaseRecursiveSpatialStructure extends RecursiveSpatialStructure,
   SomeScopedStructure extends
-    | BaseRecursiveSpatialStructure
-    | BaseRecursiveSpatialStructure['subStructure']
+    | RecursiveSpatialStructure
+    | RecursiveSpatialStructure['subStructure']
 > = SomeScopedStructure extends InitialSpatialStructureBase<infer T>
   ? Omit<SomeScopedStructure, 'structureType' | 'subStructure'>
   : SomeScopedStructure extends InterposedSpatialStructureBase<infer T>
@@ -99,7 +96,6 @@ function getUpdatedScopedStructure<
         ...scopedStructure,
         ...scopedStructureUpdates,
         subStructure: updatedSubStructure,
-        // subStructure: null => doesnt throw error
       }
     case 'terminalStructure':
       return {

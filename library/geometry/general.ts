@@ -1,4 +1,4 @@
-import { Circle, Point } from './models/general'
+import { Circle, Point } from './models'
 
 export interface GetCirclePointApi {
   someCircle: Circle
