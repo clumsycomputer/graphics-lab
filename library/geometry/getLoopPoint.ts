@@ -1,3 +1,4 @@
+import { InterposedLoopStructure } from '.'
 import {
   getCirclePoint,
   getDistanceBetweenPoints,
@@ -13,73 +14,71 @@ export interface GetLoopPointApi {
 
 export function getLoopPoint(api: GetLoopPointApi): Point {
   const { pointAngle, someLoopStructure } = api
-  return getSubLoopPoint({
+  return getBaseLoopStructurePoint({
     pointAngle,
     baseCircle: someLoopStructure.loopBase,
-    someSubLoopStructure: someLoopStructure.subStructure,
+    someBaseLoopStructure: someLoopStructure,
   })
 }
 
-interface GetSubLoopPointApi {
+interface GetBaseLoopStructurePointApi {
   pointAngle: number
   baseCircle: Circle
-  someSubLoopStructure: LoopStructure['subStructure']
+  someBaseLoopStructure: LoopStructure | InterposedLoopStructure
 }
 
-function getSubLoopPoint(api: GetSubLoopPointApi): Point {
-  const { someSubLoopStructure, baseCircle, pointAngle } = api
-  switch (someSubLoopStructure.structureType) {
-    case 'interposedStructure':
-      const foundationCircleDepth =
-        someSubLoopStructure.subStructure.relativeFoundationDepth *
-        baseCircle.radius
-      const unrotatedFoundationCircle: Circle = {
-        center: {
-          x:
-            foundationCircleDepth *
-              Math.cos(someSubLoopStructure.subStructure.foundationPhaseAngle) +
-            baseCircle.center.x,
-          y:
-            foundationCircleDepth *
-              Math.sin(someSubLoopStructure.subStructure.foundationPhaseAngle) +
-            baseCircle.center.y,
-        },
-        radius:
-          someSubLoopStructure.subStructure.relativeFoundationRadius *
-          (baseCircle.radius - foundationCircleDepth),
-      }
-      const subLoopPoint = getSubLoopPoint({
-        pointAngle,
-        baseCircle: unrotatedFoundationCircle,
-        someSubLoopStructure: someSubLoopStructure.subStructure,
-      })
-      const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
-        baseCircle,
-        subLoopPoint,
-        unrotatedFoundationCircleCenter: unrotatedFoundationCircle.center,
-      })
-      return getRotatedPoint({
-        rotationAngle: someSubLoopStructure.subLoopRotationAngle,
-        anchorPoint: getRotatedPoint({
-          anchorPoint: baseCircle.center,
-          basePoint: unrotatedFoundationCircle.center,
-          rotationAngle: someSubLoopStructure.subStructure.baseOrientationAngle,
-        }),
-        basePoint: getRotatedPoint({
-          anchorPoint: baseCircle.center,
-          rotationAngle: someSubLoopStructure.subStructure.baseOrientationAngle,
-          basePoint: {
-            x: loopBaseCirclePoint.x,
-            y: subLoopPoint.y,
-          },
-        }),
-      })
-    case 'terminalStructure':
-      return getCirclePoint({
-        pointAngle,
-        someCircle: baseCircle,
-      })
+function getBaseLoopStructurePoint(api: GetBaseLoopStructurePointApi): Point {
+  const { someBaseLoopStructure, baseCircle, pointAngle } = api
+  const foundationCircleDepth =
+    someBaseLoopStructure.subStructure.relativeFoundationDepth *
+    baseCircle.radius
+  const unrotatedFoundationCircle: Circle = {
+    center: {
+      x:
+        foundationCircleDepth *
+          Math.cos(someBaseLoopStructure.subStructure.foundationPhaseAngle) +
+        baseCircle.center.x,
+      y:
+        foundationCircleDepth *
+          Math.sin(someBaseLoopStructure.subStructure.foundationPhaseAngle) +
+        baseCircle.center.y,
+    },
+    radius:
+      someBaseLoopStructure.subStructure.relativeFoundationRadius *
+      (baseCircle.radius - foundationCircleDepth),
   }
+  const subLoopPoint =
+    someBaseLoopStructure.subStructure.structureType === 'interposedStructure'
+      ? getBaseLoopStructurePoint({
+          pointAngle,
+          baseCircle: unrotatedFoundationCircle,
+          someBaseLoopStructure: someBaseLoopStructure.subStructure,
+        })
+      : getCirclePoint({
+          pointAngle,
+          someCircle: unrotatedFoundationCircle,
+        })
+  const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
+    baseCircle,
+    subLoopPoint,
+    unrotatedFoundationCircleCenter: unrotatedFoundationCircle.center,
+  })
+  return getRotatedPoint({
+    rotationAngle: someBaseLoopStructure.subLoopRotationAngle,
+    anchorPoint: getRotatedPoint({
+      anchorPoint: baseCircle.center,
+      basePoint: unrotatedFoundationCircle.center,
+      rotationAngle: someBaseLoopStructure.subStructure.baseOrientationAngle,
+    }),
+    basePoint: getRotatedPoint({
+      anchorPoint: baseCircle.center,
+      rotationAngle: someBaseLoopStructure.subStructure.baseOrientationAngle,
+      basePoint: {
+        x: loopBaseCirclePoint.x,
+        y: subLoopPoint.y,
+      },
+    }),
+  })
 }
 
 interface getLoopBaseCirclePointApi {
