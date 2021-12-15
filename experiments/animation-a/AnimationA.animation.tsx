@@ -217,15 +217,15 @@ function AnimationFrame(props: AnimationFrameProps) {
   })
   const ringLayerOscillationScalars = getRangedRhythmValues({
     someNumberRange: {
-      startValue: 10,
-      targetValue: 0,
+      startValue: 1,
+      targetValue: 10,
     },
     someRhythmMap: ringLayerRhythmMapStructure,
   })
   const loopNestScalars = getRangedRhythmValues({
     someNumberRange: {
       startValue: 1,
-      targetValue: 0.925,
+      targetValue: 0,
     },
     someRhythmMap: ringLayerRhythmMapStructure,
   })
