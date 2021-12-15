@@ -18,7 +18,7 @@ import getColormap from 'colormap'
 const animationModuleA: AnimationModule = {
   animationName: 'AnimationA',
   frameSize: 2048,
-  frameCount: 10 * 4,
+  frameCount: 10 * 10,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -217,8 +217,15 @@ function AnimationFrame(props: AnimationFrameProps) {
   })
   const ringLayerOscillationScalars = getRangedRhythmValues({
     someNumberRange: {
-      startValue: 4,
-      targetValue: 2.5,
+      startValue: 10,
+      targetValue: 0,
+    },
+    someRhythmMap: ringLayerRhythmMapStructure,
+  })
+  const loopNestScalars = getRangedRhythmValues({
+    someNumberRange: {
+      startValue: 1,
+      targetValue: 0.925,
     },
     someRhythmMap: ringLayerRhythmMapStructure,
   })
@@ -237,51 +244,80 @@ function AnimationFrame(props: AnimationFrameProps) {
             ringLayerOscillationScalars[rhythmPointIndex]!
           const ringLayerColor =
             ringLayerOscillationColormap[ringLayerRhythmPoint]!
-          const getTraceAngleBase = (sampleAngle: number) =>
+          const getTraceAngleBase = (
+            sampleAngle: number,
+            rotationDirectionScalar: number
+          ) =>
             211 * sampleAngle -
-            Math.pow(2, rhythmPointIndex + 1) * Math.PI +
+            rotationDirectionScalar *
+              Math.pow(2, rhythmPointIndex + 1) *
+              Math.PI +
             frameStamp +
             Math.PI * ringLayerOscillationScalar
-          const underlayLoopPoints = getOscillatedLoopPoints({
-            someLoopPointsData: loopPointsDataA,
-            getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
-              ringLayerOscillationScalar *
-              getHarmonicLoopWaveSampleData({
-                someLoopPointsData: waveLoopPointsDataA,
-                traceAngle: getNormalizedAngle({
-                  someAngle: 2 * getTraceAngleBase(sampleAngle),
-                }),
-                harmonicDistribution: [1, 0.5, 0.25],
-                startingTracePointIndices: [0, 0, 0],
-              })[0],
-          })
-          const overlayLoopPoints = getOscillatedLoopPoints({
-            someLoopPointsData: loopPointsDataA,
-            getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
-              ringLayerOscillationScalar *
-              getHarmonicLoopWaveSampleData({
-                someLoopPointsData: waveLoopPointsDataA,
-                traceAngle: getNormalizedAngle({
-                  someAngle: getTraceAngleBase(centerAngle),
-                }),
-                harmonicDistribution: [1, 0.5, 0.25],
-                startingTracePointIndices: [0, 0, 0],
-              })[0],
-          })
           return (
-            <OscillatedLoopGraphic
-              id={`${rhythmPointIndex}`}
-              underlayLoopPoints={underlayLoopPoints}
-              overlayLoopPoints={overlayLoopPoints}
-              fillColor={ringLayerColor}
-              cellLength={ringLayerOscillationScalar / 4}
-              targetRectangle={{
-                x: 0,
-                y: 0,
-                width: 100,
-                height: 100,
-              }}
-            />
+            <g>
+              {ringLayerRhythmMapStructure.rhythmPoints.map(
+                (someNestPoint, nestPointIndex) => {
+                  const phaseDirectionScalar = nestPointIndex % 2 === 0 ? 1 : -1
+                  const loopNestScalar = loopNestScalars[nestPointIndex]!
+                  const underlayLoopPoints = getOscillatedLoopPoints({
+                    someLoopPointsData: loopPointsDataA,
+                    loopRadiusScalar: loopNestScalar,
+                    getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
+                      ringLayerOscillationScalar *
+                      loopNestScalar *
+                      getHarmonicLoopWaveSampleData({
+                        someLoopPointsData: waveLoopPointsDataA,
+                        traceAngle: getNormalizedAngle({
+                          someAngle:
+                            2 *
+                            getTraceAngleBase(
+                              sampleAngle,
+                              phaseDirectionScalar
+                            ),
+                        }),
+                        harmonicDistribution: [1, 0.5, 0.25],
+                        startingTracePointIndices: [0, 0, 0],
+                      })[0],
+                  })
+                  const overlayLoopPoints = getOscillatedLoopPoints({
+                    someLoopPointsData: loopPointsDataA,
+                    loopRadiusScalar: loopNestScalar,
+                    getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
+                      ringLayerOscillationScalar *
+                      loopNestScalar *
+                      getHarmonicLoopWaveSampleData({
+                        someLoopPointsData: waveLoopPointsDataA,
+                        traceAngle: getNormalizedAngle({
+                          someAngle: getTraceAngleBase(
+                            centerAngle,
+                            phaseDirectionScalar
+                          ),
+                        }),
+                        harmonicDistribution: [1, 0.5, 0.25],
+                        startingTracePointIndices: [0, 0, 0],
+                      })[0],
+                  })
+                  return (
+                    <OscillatedLoopGraphic
+                      id={`${rhythmPointIndex}-${nestPointIndex}`}
+                      underlayLoopPoints={underlayLoopPoints}
+                      overlayLoopPoints={overlayLoopPoints}
+                      fillColor={ringLayerColor}
+                      cellLength={
+                        (ringLayerOscillationScalar / 2.75) * loopNestScalar
+                      }
+                      targetRectangle={{
+                        x: 0,
+                        y: 0,
+                        width: 100,
+                        height: 100,
+                      }}
+                    />
+                  )
+                }
+              )}
+            </g>
           )
         }
       )}
@@ -290,6 +326,7 @@ function AnimationFrame(props: AnimationFrameProps) {
 }
 
 interface GetOscillatedLoopPointsDataApi {
+  loopRadiusScalar: number
   someLoopPointsData: ReturnType<typeof getLoopPointsData>
   getLoopPointOscillation: (api: {
     sampleAngle: number
@@ -300,7 +337,7 @@ interface GetOscillatedLoopPointsDataApi {
 function getOscillatedLoopPoints(
   api: GetOscillatedLoopPointsDataApi
 ): Array<LoopPoint> {
-  const { someLoopPointsData, getLoopPointOscillation } = api
+  const { someLoopPointsData, getLoopPointOscillation, loopRadiusScalar } = api
   return someLoopPointsData.samplePoints.map((someLoopPoint, sampleIndex) => {
     const sampleAngle =
       ((2 * Math.PI) / someLoopPointsData.samplePoints.length) * sampleIndex
@@ -318,7 +355,7 @@ function getOscillatedLoopPoints(
       pointB: tracePoint,
     })
     const oscillatedPointRadius =
-      loopPointOscillation + loopPointToLoopCenterDistance
+      loopPointOscillation + loopRadiusScalar * loopPointToLoopCenterDistance
     return {
       ...someLoopPoint,
       x:
@@ -355,10 +392,10 @@ function OscillatedLoopGraphic(props: OscillattedLoopGraphicProps) {
       <mask id={id}>
         {underlayLoopPoints.map((somePoint) => (
           <rect
-            x={somePoint.x - halfCellLength}
-            y={somePoint.y - halfCellLength}
-            width={cellLength}
-            height={cellLength}
+            x={somePoint.x - halfCellLength / 2}
+            y={somePoint.y - halfCellLength / 2}
+            width={cellLength / 2}
+            height={cellLength / 2}
             fill={'white'}
           />
         ))}
