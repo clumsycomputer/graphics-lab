@@ -18,7 +18,7 @@ import getColormap from 'colormap'
 const animationModuleA: AnimationModule = {
   animationName: 'AnimationA',
   frameSize: 2048,
-  frameCount: 10 * 10,
+  frameCount: 10 * 4,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -56,8 +56,8 @@ function AnimationFrame(props: AnimationFrameProps) {
   })
   const baseRotationAngleBaseValues = getRangedRhythmValues({
     someNumberRange: {
-      startValue: Math.PI / 2,
-      targetValue: 0,
+      startValue: 0,
+      targetValue: Math.PI / 2,
     },
     someRhythmMap: getStructuredRhythmMap({
       someRhythmStructure: {
@@ -188,24 +188,42 @@ function AnimationFrame(props: AnimationFrameProps) {
   const ringLayerRhythmMapStructure = getStructuredRhythmMap({
     someRhythmStructure: {
       structureType: 'initialStructure',
-      rhythmResolution: 12,
+      rhythmResolution: 18,
       rhythmPhase: 0,
       subStructure: {
-        structureType: 'terminalStructure',
-        rhythmDensity: 7,
+        structureType: 'interposedStructure',
+        rhythmDensity: 17,
         rhythmOrientation: 0,
+        rhythmPhase: 0,
+        subStructure: {
+          structureType: 'interposedStructure',
+          rhythmDensity: 13,
+          rhythmOrientation: 0,
+          rhythmPhase: 0,
+          subStructure: {
+            structureType: 'interposedStructure',
+            rhythmDensity: 11,
+            rhythmOrientation: 0,
+            rhythmPhase: 0,
+            subStructure: {
+              structureType: 'terminalStructure',
+              rhythmDensity: 7,
+              rhythmOrientation: 3,
+            },
+          },
+        },
       },
     },
   })
   const ringLayerOscillationScalars = getRangedRhythmValues({
     someNumberRange: {
-      startValue: 3,
-      targetValue: 1,
+      startValue: 4,
+      targetValue: 2.5,
     },
     someRhythmMap: ringLayerRhythmMapStructure,
   })
   const ringLayerOscillationColormap = getColormap({
-    colormap: 'jet',
+    colormap: 'cubehelix',
     nshades: ringLayerRhythmMapStructure.rhythmResolution,
     format: 'hex',
     alpha: 1,
@@ -219,6 +237,11 @@ function AnimationFrame(props: AnimationFrameProps) {
             ringLayerOscillationScalars[rhythmPointIndex]!
           const ringLayerColor =
             ringLayerOscillationColormap[ringLayerRhythmPoint]!
+          const getTraceAngleBase = (sampleAngle: number) =>
+            211 * sampleAngle -
+            Math.pow(2, rhythmPointIndex + 1) * Math.PI +
+            frameStamp +
+            Math.PI * ringLayerOscillationScalar
           const underlayLoopPoints = getOscillatedLoopPoints({
             someLoopPointsData: loopPointsDataA,
             getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
@@ -226,11 +249,7 @@ function AnimationFrame(props: AnimationFrameProps) {
               getHarmonicLoopWaveSampleData({
                 someLoopPointsData: waveLoopPointsDataA,
                 traceAngle: getNormalizedAngle({
-                  someAngle:
-                    2 * 211 * sampleAngle +
-                    Math.pow(2, rhythmPointIndex + 1) * Math.PI +
-                    frameStamp +
-                    Math.PI * ringLayerOscillationScalar,
+                  someAngle: 2 * getTraceAngleBase(sampleAngle),
                 }),
                 harmonicDistribution: [1, 0.5, 0.25],
                 startingTracePointIndices: [0, 0, 0],
@@ -243,11 +262,7 @@ function AnimationFrame(props: AnimationFrameProps) {
               getHarmonicLoopWaveSampleData({
                 someLoopPointsData: waveLoopPointsDataA,
                 traceAngle: getNormalizedAngle({
-                  someAngle:
-                    211 * centerAngle -
-                    Math.pow(2, rhythmPointIndex + 1) * Math.PI +
-                    frameStamp +
-                    Math.PI * ringLayerOscillationScalar,
+                  someAngle: getTraceAngleBase(centerAngle),
                 }),
                 harmonicDistribution: [1, 0.5, 0.25],
                 startingTracePointIndices: [0, 0, 0],
@@ -259,7 +274,7 @@ function AnimationFrame(props: AnimationFrameProps) {
               underlayLoopPoints={underlayLoopPoints}
               overlayLoopPoints={overlayLoopPoints}
               fillColor={ringLayerColor}
-              cellLength={ringLayerOscillationScalar / 3}
+              cellLength={ringLayerOscillationScalar / 4}
               targetRectangle={{
                 x: 0,
                 y: 0,
