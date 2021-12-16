@@ -93,8 +93,8 @@ function AnimationFrame(props: AnimationFrameProps) {
   const baseLoopStructureA: LoopStructure = {
     structureType: 'initialStructure',
     loopBase: {
-      center: { x: 50, y: 50 },
-      radius: 30,
+      center: { x: 0, y: 0 },
+      radius: 0.6,
     },
     subLoopRotationAngle: 0,
     subStructure: {
@@ -121,16 +121,16 @@ function AnimationFrame(props: AnimationFrameProps) {
       },
     },
   }
-  const baseLoopPointsDataA = getLoopPointsData({
-    someLoopStructure: {
-      ...baseLoopStructureA,
-      loopBase: {
-        center: { x: 0, y: 0 },
-        radius: 1,
-      },
-    },
-    sampleCount: 1024,
-  })
+  // const baseLoopPointsDataA = getLoopPointsData({
+  //   someLoopStructure: {
+  //     ...baseLoopStructureA,
+  //     loopBase: {
+  //       center: { x: 0, y: 0 },
+  //       radius: 1,
+  //     },
+  //   },
+  //   sampleCount: 1024,
+  // })
   const loopStructureA = getUpdatedLoopStructure({
     baseStructure: baseLoopStructureA,
     getScopedStructureUpdates: ({ scopedStructureBase, structureIndex }) => {
@@ -148,24 +148,16 @@ function AnimationFrame(props: AnimationFrameProps) {
             }),
             baseOrientationAngle:
               baseRotationAngleScalarValues[structureIndex - 1]! *
-                getHarmonicLoopWaveSampleData({
-                  someLoopPointsData: baseLoopPointsDataA,
-                  harmonicDistribution: [
-                    1,
-                    0.2 *
-                      getLoopWaveSampleData({
-                        someLoopPointsData: baseLoopPointsDataA,
-                        traceAngle: 2 * Math.PI * frameStamp,
-                        startingTracePointIndex: 0,
-                      })[0] +
-                      0.4,
-                  ],
-                  startingTracePointIndices: [0, 0],
-                  traceAngle: getNormalizedAngle({
-                    someAngle:
-                      Math.pow(2, structureIndex) * Math.PI * frameStamp,
-                  }),
-                })[0] +
+                Math.sin(Math.pow(2, structureIndex) * Math.PI * frameStamp) +
+              // getHarmonicLoopWaveSampleData({
+              //   someLoopPointsData: baseLoopPointsDataA,
+              //   harmonicDistribution: [1, 0.5],
+              //   startingTracePointIndices: [0, 0],
+              //   traceAngle: getNormalizedAngle({
+              //     someAngle:
+              //       Math.pow(2, structureIndex) * Math.PI * frameStamp,
+              //   }),
+              // })[0] +
               scopedStructureBase.baseOrientationAngle,
           }
       }
@@ -175,17 +167,7 @@ function AnimationFrame(props: AnimationFrameProps) {
     someLoopStructure: loopStructureA,
     sampleCount: 1024,
   })
-  const waveLoopPointsDataA = getLoopPointsData({
-    someLoopStructure: {
-      ...loopStructureA,
-      loopBase: {
-        center: { x: 0, y: 0 },
-        radius: 1,
-      },
-    },
-    sampleCount: 1024,
-  })
-  const ringLayerRhythmMapStructure = getStructuredRhythmMap({
+  const radialLoopStructuredRhythmMap = getStructuredRhythmMap({
     someRhythmStructure: {
       structureType: 'initialStructure',
       rhythmResolution: 18,
@@ -207,223 +189,290 @@ function AnimationFrame(props: AnimationFrameProps) {
             rhythmPhase: 0,
             subStructure: {
               structureType: 'terminalStructure',
-              rhythmDensity: 7,
-              rhythmOrientation: 3,
+              rhythmDensity: 5,
+              rhythmOrientation: 0,
             },
           },
         },
       },
     },
   })
-  const ringLayerOscillationScalars = getRangedRhythmValues({
+  const radialLoopScalarsA = getRangedRhythmValues({
     someNumberRange: {
       startValue: 1,
-      targetValue: 10,
+      targetValue: 0.5,
     },
-    someRhythmMap: ringLayerRhythmMapStructure,
+    someRhythmMap: radialLoopStructuredRhythmMap,
   })
-  const loopNestScalars = getRangedRhythmValues({
+  const orthogonalLoopScalarsA = getRangedRhythmValues({
     someNumberRange: {
       startValue: 1,
-      targetValue: 0,
+      targetValue: 0.5,
     },
-    someRhythmMap: ringLayerRhythmMapStructure,
+    someRhythmMap: radialLoopStructuredRhythmMap,
   })
-  const ringLayerOscillationColormap = getColormap({
+  const loopColormapA = getColormap({
     colormap: 'cubehelix',
-    nshades: ringLayerRhythmMapStructure.rhythmResolution,
+    nshades: radialLoopStructuredRhythmMap.rhythmResolution,
     format: 'hex',
     alpha: 1,
   })
+  const loopNestCellsDataA = getLoopNestCellsData({
+    sampleCount: 512,
+    radialLoopCount: radialLoopStructuredRhythmMap.rhythmPoints.length,
+    baseLoopPointsData: loopPointsDataA,
+    getOrthogonalLoopCount: () =>
+      radialLoopStructuredRhythmMap.rhythmPoints.length,
+    getRadialLoopRadiusScalar: (radialLoopIndex) => {
+      return radialLoopScalarsA[radialLoopIndex]!
+    },
+    getUnderlayLoopOscillation: (
+      radialLoopIndex,
+      orthogonalLoopIndex,
+      sampleAngle
+    ) =>
+      0.1 *
+      radialLoopScalarsA[radialLoopIndex]! *
+      orthogonalLoopScalarsA[orthogonalLoopIndex]! *
+      Math.sin(
+        220 * sampleAngle +
+          Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
+      ),
+    getOverlayLoopOscillation: (
+      radialLoopIndex,
+      orthogonalLoopIndex,
+      sampleAngle
+    ) =>
+      0.1 *
+      radialLoopScalarsA[radialLoopIndex]! *
+      orthogonalLoopScalarsA[orthogonalLoopIndex]! *
+      Math.sin(
+        211 * sampleAngle +
+          Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
+      ),
+    getUnderlayLoopCellFillColor: (radialLoopIndex, orthogonalLoopIndex) => {
+      return loopColormapA[
+        radialLoopStructuredRhythmMap.rhythmPoints[orthogonalLoopIndex]!
+      ]!
+    },
+    getLoopCellLength: (radialLoopIndex, orthogonalLoopIndex) => {
+      return (
+        0.06 *
+        radialLoopScalarsA[radialLoopIndex]! *
+        orthogonalLoopScalarsA[orthogonalLoopIndex]!
+      )
+    },
+  })
   return (
-    <svg viewBox={`0 0 100 100`}>
-      <rect x={0} y={0} width={100} height={100} fill={'black'} />
-      {ringLayerRhythmMapStructure.rhythmPoints.map(
-        (ringLayerRhythmPoint, rhythmPointIndex) => {
-          const ringLayerOscillationScalar =
-            ringLayerOscillationScalars[rhythmPointIndex]!
-          const ringLayerColor =
-            ringLayerOscillationColormap[ringLayerRhythmPoint]!
-          const getTraceAngleBase = (
-            sampleAngle: number,
-            rotationDirectionScalar: number
-          ) =>
-            211 * sampleAngle -
-            rotationDirectionScalar *
-              Math.pow(2, rhythmPointIndex + 1) *
-              Math.PI +
-            frameStamp +
-            Math.PI * ringLayerOscillationScalar
-          return (
-            <g>
-              {ringLayerRhythmMapStructure.rhythmPoints.map(
-                (someNestPoint, nestPointIndex) => {
-                  const phaseDirectionScalar = nestPointIndex % 2 === 0 ? 1 : -1
-                  const loopNestScalar = loopNestScalars[nestPointIndex]!
-                  const underlayLoopPoints = getOscillatedLoopPoints({
-                    someLoopPointsData: loopPointsDataA,
-                    loopRadiusScalar: loopNestScalar,
-                    getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
-                      ringLayerOscillationScalar *
-                      loopNestScalar *
-                      getHarmonicLoopWaveSampleData({
-                        someLoopPointsData: waveLoopPointsDataA,
-                        traceAngle: getNormalizedAngle({
-                          someAngle:
-                            2 *
-                            getTraceAngleBase(
-                              sampleAngle,
-                              phaseDirectionScalar
-                            ),
-                        }),
-                        harmonicDistribution: [1, 0.5, 0.25],
-                        startingTracePointIndices: [0, 0, 0],
-                      })[0],
-                  })
-                  const overlayLoopPoints = getOscillatedLoopPoints({
-                    someLoopPointsData: loopPointsDataA,
-                    loopRadiusScalar: loopNestScalar,
-                    getLoopPointOscillation: ({ centerAngle, sampleAngle }) =>
-                      ringLayerOscillationScalar *
-                      loopNestScalar *
-                      getHarmonicLoopWaveSampleData({
-                        someLoopPointsData: waveLoopPointsDataA,
-                        traceAngle: getNormalizedAngle({
-                          someAngle: getTraceAngleBase(
-                            centerAngle,
-                            phaseDirectionScalar
-                          ),
-                        }),
-                        harmonicDistribution: [1, 0.5, 0.25],
-                        startingTracePointIndices: [0, 0, 0],
-                      })[0],
-                  })
-                  return (
-                    <OscillatedLoopGraphic
-                      id={`${rhythmPointIndex}-${nestPointIndex}`}
-                      underlayLoopPoints={underlayLoopPoints}
-                      overlayLoopPoints={overlayLoopPoints}
-                      fillColor={ringLayerColor}
-                      cellLength={
-                        (ringLayerOscillationScalar / 2.75) * loopNestScalar
+    <svg viewBox={`-1 -1 2 2`}>
+      <rect x={-1} y={-1} width={2} height={2} fill={'black'} />
+      {loopNestCellsDataA.map((someRadialLoopNestData, radialLoopIndex) => {
+        return someRadialLoopNestData.map(
+          (
+            [someUnderlayLoopCells, someOverlayLoopCells],
+            orthogonalLoopIndex
+          ) => {
+            const maskId = `${radialLoopIndex}-${orthogonalLoopIndex}`
+            return (
+              <g>
+                <mask id={maskId}>
+                  <rect x={-1} y={-1} width={2} height={2} fill={'white'} />
+                  {someOverlayLoopCells.map((someOverlayLoopCell) => (
+                    <rect
+                      x={
+                        someOverlayLoopCell.cellCenter.x -
+                        someOverlayLoopCell.cellLength / 2
                       }
-                      targetRectangle={{
-                        x: 0,
-                        y: 0,
-                        width: 100,
-                        height: 100,
-                      }}
+                      y={
+                        someOverlayLoopCell.cellCenter.y -
+                        someOverlayLoopCell.cellLength / 2
+                      }
+                      width={someOverlayLoopCell.cellLength}
+                      height={someOverlayLoopCell.cellLength}
+                      fill={'black'}
                     />
-                  )
-                }
-              )}
-            </g>
-          )
-        }
-      )}
+                  ))}
+                </mask>
+                <g mask={`url(#${maskId})`}>
+                  {someUnderlayLoopCells.map((someUnderlayLoopCell) => (
+                    <rect
+                      x={
+                        someUnderlayLoopCell.cellCenter.x -
+                        someUnderlayLoopCell.cellLength / 2
+                      }
+                      y={
+                        someUnderlayLoopCell.cellCenter.y -
+                        someUnderlayLoopCell.cellLength / 2
+                      }
+                      width={someUnderlayLoopCell.cellLength}
+                      height={someUnderlayLoopCell.cellLength}
+                      fill={someUnderlayLoopCell.fillColor}
+                    />
+                  ))}
+                </g>
+              </g>
+            )
+          }
+        )
+      })}
     </svg>
   )
 }
 
-interface GetOscillatedLoopPointsDataApi {
-  loopRadiusScalar: number
-  someLoopPointsData: ReturnType<typeof getLoopPointsData>
-  getLoopPointOscillation: (api: {
+interface GetLoopNestCellsDataApi {
+  baseLoopPointsData: ReturnType<typeof getLoopPointsData>
+  sampleCount: number
+  radialLoopCount: number
+  getOrthogonalLoopCount: (radialLoopIndex: number) => number
+  getRadialLoopRadiusScalar: (radialLoopIndex: number) => number
+  // getRadialLoopOscillationScalar: (
+  //   radialLoopIndex: number,
+  //   sampleAngle: number
+  // ) => number
+  getLoopCellLength: (
+    radialLoopIndex: number,
+    orthogonalLoopIndex: number
+  ) => number
+  getUnderlayLoopCellFillColor: (
+    radialLoopIndex: number,
+    orthogonalLoopIndex: number
+  ) => string
+  getUnderlayLoopOscillation: (
+    radialLoopIndex: number,
+    orthogonalLoopIndex: number,
     sampleAngle: number
-    centerAngle: number
-  }) => number
+  ) => number
+  getOverlayLoopOscillation: (
+    radialLoopIndex: number,
+    orthogonalLoopIndex: number,
+    sampleAngle: number
+  ) => number
 }
 
-function getOscillatedLoopPoints(
-  api: GetOscillatedLoopPointsDataApi
-): Array<LoopPoint> {
-  const { someLoopPointsData, getLoopPointOscillation, loopRadiusScalar } = api
-  return someLoopPointsData.samplePoints.map((someLoopPoint, sampleIndex) => {
-    const sampleAngle =
-      ((2 * Math.PI) / someLoopPointsData.samplePoints.length) * sampleIndex
-    const loopPointOscillation = getLoopPointOscillation({
-      sampleAngle,
-      centerAngle: someLoopPoint.centerAngle,
-    })
-    const tracePoint = getTracePointData({
-      someLoopPointsData,
+function getLoopNestCellsData(
+  api: GetLoopNestCellsDataApi
+): Array<
+  Array<
+    [
+      underlayLoopCells: Array<UnderlayLoopCell>,
+      overlayLoopCells: Array<OverlayLoopCell>
+    ]
+  >
+> {
+  const {
+    radialLoopCount,
+    getOrthogonalLoopCount,
+    baseLoopPointsData,
+    sampleCount,
+    getRadialLoopRadiusScalar,
+    // getRadialLoopOscillationScalar,
+    getLoopCellLength,
+    getUnderlayLoopCellFillColor,
+    getUnderlayLoopOscillation,
+    getOverlayLoopOscillation,
+  } = api
+  const radialLoopNestData: Array<
+    Array<
+      [
+        underlayLoopCells: Array<UnderlayLoopCell>,
+        overlayLoopCells: Array<OverlayLoopCell>
+      ]
+    >
+  > = new Array(radialLoopCount)
+    .fill(undefined)
+    .map((_, someRadialLoopIndex) =>
+      new Array(getOrthogonalLoopCount(someRadialLoopIndex))
+        .fill(undefined)
+        .map(() => [[], []])
+    )
+  const baseLoopCenter = baseLoopPointsData.samplesCenter
+  let baseTracePointIndex = 0
+  for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+    const sampleAngle = 2 * Math.PI * (sampleIndex / sampleCount)
+    const [baseTracePoint, nextBaseTracePointIndex] = getTracePointData({
+      someLoopPointsData: baseLoopPointsData,
+      startingTracePointIndex: baseTracePointIndex,
       traceAngle: sampleAngle,
-      startingTracePointIndex: 0,
-    })[0]
-    const loopPointToLoopCenterDistance = getDistanceBetweenPoints({
-      pointA: someLoopPointsData.samplesCenter,
-      pointB: tracePoint,
     })
-    const oscillatedPointRadius =
-      loopPointOscillation + loopRadiusScalar * loopPointToLoopCenterDistance
-    return {
-      ...someLoopPoint,
-      x:
-        oscillatedPointRadius * Math.cos(sampleAngle) +
-        someLoopPointsData.samplesCenter.x,
-      y:
-        oscillatedPointRadius * Math.sin(sampleAngle) +
-        someLoopPointsData.samplesCenter.y,
-    }
-  })
+    baseTracePointIndex = nextBaseTracePointIndex
+    const baseTracePointToBaseLoopCenterLength = getDistanceBetweenPoints({
+      pointA: baseLoopCenter,
+      pointB: baseTracePoint,
+    })
+    radialLoopNestData.forEach(
+      (someOrthogonalLoopNestData, radialLoopIndex) => {
+        const radialLoopRadiusScalar =
+          getRadialLoopRadiusScalar(radialLoopIndex)
+        const radialLoopRadius =
+          radialLoopRadiusScalar * baseTracePointToBaseLoopCenterLength
+        // const radialLoopOscillationScalar = getRadialLoopOscillationScalar(
+        //   radialLoopIndex,
+        //   sampleAngle
+        // )
+        someOrthogonalLoopNestData.forEach(
+          (
+            [someUnderlayLoopCells, someOverlayLoopCells],
+            orthogonalLoopIndex
+          ) => {
+            const loopCellLength = getLoopCellLength(
+              radialLoopIndex,
+              orthogonalLoopIndex
+            )
+            const underlayLoopCellOscillation = getUnderlayLoopOscillation(
+              radialLoopIndex,
+              orthogonalLoopIndex,
+              sampleAngle
+            )
+            const underlayLoopCellRadius =
+              radialLoopRadius + underlayLoopCellOscillation
+            someUnderlayLoopCells.push({
+              cellLength: loopCellLength,
+              fillColor: getUnderlayLoopCellFillColor(
+                radialLoopIndex,
+                orthogonalLoopIndex
+              ),
+              cellCenter: {
+                x:
+                  underlayLoopCellRadius * Math.cos(sampleAngle) +
+                  baseLoopCenter.x,
+                y:
+                  underlayLoopCellRadius * Math.sin(sampleAngle) +
+                  baseLoopCenter.y,
+              },
+            })
+            const overlayLoopCellOscillation = getOverlayLoopOscillation(
+              radialLoopIndex,
+              orthogonalLoopIndex,
+              sampleAngle
+            )
+            const overlayLoopCellRadius =
+              overlayLoopCellOscillation + radialLoopRadius
+            someOverlayLoopCells.push({
+              cellLength: loopCellLength,
+              cellCenter: {
+                x:
+                  overlayLoopCellRadius * Math.cos(sampleAngle) +
+                  baseLoopCenter.x,
+                y:
+                  overlayLoopCellRadius * Math.sin(sampleAngle) +
+                  baseLoopCenter.y,
+              },
+            })
+          }
+        )
+      }
+    )
+  }
+  return radialLoopNestData
 }
 
-interface OscillattedLoopGraphicProps {
-  id: string
-  underlayLoopPoints: Array<Point>
-  overlayLoopPoints: Array<Point>
-  cellLength: number
-  targetRectangle: Rectangle
+interface UnderlayLoopCell extends LoopCellBase {
   fillColor: string
 }
 
-function OscillatedLoopGraphic(props: OscillattedLoopGraphicProps) {
-  const {
-    cellLength,
-    id,
-    fillColor,
-    targetRectangle,
-    underlayLoopPoints,
-    overlayLoopPoints,
-  } = props
-  const halfCellLength = cellLength / 2
-  return (
-    <g>
-      <mask id={id}>
-        {underlayLoopPoints.map((somePoint) => (
-          <rect
-            x={somePoint.x - halfCellLength / 2}
-            y={somePoint.y - halfCellLength / 2}
-            width={cellLength / 2}
-            height={cellLength / 2}
-            fill={'white'}
-          />
-        ))}
-        {overlayLoopPoints.map((somePoint) => (
-          <rect
-            x={somePoint.x - halfCellLength}
-            y={somePoint.y - halfCellLength}
-            width={cellLength}
-            height={cellLength}
-            fill={'black'}
-          />
-        ))}
-      </mask>
-      <rect
-        fill={fillColor}
-        x={targetRectangle.x}
-        y={targetRectangle.y}
-        width={targetRectangle.width}
-        height={targetRectangle.height}
-        mask={`url(#${id})`}
-      />
-    </g>
-  )
-}
+interface OverlayLoopCell extends LoopCellBase {}
 
-interface Rectangle {
-  x: number
-  y: number
-  width: number
-  height: number
+interface LoopCellBase {
+  cellCenter: Point
+  cellLength: number
 }
