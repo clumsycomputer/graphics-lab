@@ -2,7 +2,7 @@ import { AnimationModule } from '@clumsycomputer/graphics-renderer'
 import { getWaveFrequency } from '@library/general'
 import {
   getDistanceBetweenPoints,
-  getHarmonicLoopWaveSampleData,
+  getHarmonicLoopWaveSamplePointData,
   getLoopPointsData,
   getNormalizedAngle,
   getTracePointData,
@@ -148,7 +148,7 @@ function AnimationFrame(props: AnimationFrameProps) {
             }),
             baseOrientationAngle:
               baseRotationAngleScalarValues[structureIndex - 1]! *
-                getHarmonicLoopWaveSampleData({
+                getHarmonicLoopWaveSamplePointData({
                   someLoopPointsData: baseLoopPointsDataA,
                   harmonicDistribution: [1, 0.5],
                   startingTracePointIndices: [0, 0],
@@ -156,7 +156,7 @@ function AnimationFrame(props: AnimationFrameProps) {
                     someAngle:
                       Math.pow(2, structureIndex) * Math.PI * frameStamp,
                   }),
-                })[0] +
+                })[0].y +
               scopedStructureBase.baseOrientationAngle,
           }
       }
@@ -223,7 +223,7 @@ function AnimationFrame(props: AnimationFrameProps) {
       0.1 *
       radialLoopScalarsA[radialLoopIndex]! *
       orthogonalLoopScalarsA[orthogonalLoopIndex]! *
-      getHarmonicLoopWaveSampleData({
+      getHarmonicLoopWaveSamplePointData({
         someLoopPointsData: baseLoopPointsDataA,
         harmonicDistribution: [1, 0.5, 0.25, 0.125],
         startingTracePointIndices: [0, 0, 0, 0],
@@ -244,7 +244,7 @@ function AnimationFrame(props: AnimationFrameProps) {
                   radialLoopScalarsA[radialLoopIndex]! *
                   orthogonalLoopScalarsA[orthogonalLoopIndex]!),
         }),
-      })[0]
+      })[0].y
     )
   }
   const loopNestDataA = getLoopNestCellsData({
@@ -259,9 +259,15 @@ function AnimationFrame(props: AnimationFrameProps) {
     },
     getLoopCenterShift: (radialLoopIndex, orthogonalLoopIndex) => {
       const radialLoopRadiusScalar = radialLoopScalarsA[radialLoopIndex]!
+      const harmonicSamplePoint = getHarmonicLoopWaveSamplePointData({
+        someLoopPointsData: loopPointsDataA,
+        traceAngle: 2 * Math.PI * frameStamp,
+        harmonicDistribution: [1, 0.5, 0.25],
+        startingTracePointIndices: [0, 0, 0],
+      })[0]
       return {
-        x: 0.3 * radialLoopRadiusScalar * Math.cos(2 * Math.PI * frameStamp),
-        y: 0.3 * radialLoopRadiusScalar * Math.sin(2 * Math.PI * frameStamp),
+        x: 0.5 * radialLoopRadiusScalar * harmonicSamplePoint.x,
+        y: 0.5 * radialLoopRadiusScalar * harmonicSamplePoint.y,
       }
     },
     getUnderlayLoopOscillation: (

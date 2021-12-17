@@ -1,11 +1,12 @@
 import {
-  getHarmonicLoopWaveSampleData,
-  GetHarmonicLoopWaveSampleDataApi,
-} from './getHarmonicLoopWaveSampleData'
+  getHarmonicLoopWaveSamplePointData,
+  GetHarmonicLoopWaveSamplePointDataApi,
+} from './getHarmonicLoopWaveSamplePointData'
+import { Point } from './models'
 
 export interface GetHarmonicLoopWaveSamplesApi
   extends Pick<
-    GetHarmonicLoopWaveSampleDataApi,
+    GetHarmonicLoopWaveSamplePointDataApi,
     'someLoopPointsData' | 'harmonicDistribution'
   > {
   sampleCount: number
@@ -13,20 +14,20 @@ export interface GetHarmonicLoopWaveSamplesApi
 
 export function getHarmonicLoopWaveSamples(
   api: GetHarmonicLoopWaveSamplesApi
-): Array<number> {
+): Array<Point> {
   const { harmonicDistribution, sampleCount, someLoopPointsData } = api
-  const harmonicLoopWaveSamples: Array<number> = []
+  const harmonicLoopWaveSamplePoints: Array<Point> = []
   let startingTracePointIndices = harmonicDistribution.map(() => 0)
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-    const [harmonicLoopWaveSample, nextStartingTracePointIndices] =
-      getHarmonicLoopWaveSampleData({
+    const [harmonicLoopWaveSamplePoint, nextStartingTracePointIndices] =
+      getHarmonicLoopWaveSamplePointData({
         harmonicDistribution,
         someLoopPointsData,
         startingTracePointIndices,
         traceAngle: 2 * Math.PI * (sampleIndex / sampleCount),
       })
-    harmonicLoopWaveSamples.push(harmonicLoopWaveSample)
+    harmonicLoopWaveSamplePoints.push(harmonicLoopWaveSamplePoint)
     startingTracePointIndices = nextStartingTracePointIndices
   }
-  return harmonicLoopWaveSamples
+  return harmonicLoopWaveSamplePoints
 }
