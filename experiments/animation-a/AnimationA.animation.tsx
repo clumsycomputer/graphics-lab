@@ -200,14 +200,14 @@ function AnimationFrame(props: AnimationFrameProps) {
   const radialLoopScalarsA = getRangedRhythmValues({
     someNumberRange: {
       startValue: 1,
-      targetValue: 0.5,
+      targetValue: 0,
     },
     someRhythmMap: radialLoopStructuredRhythmMap,
   })
   const orthogonalLoopScalarsA = getRangedRhythmValues({
     someNumberRange: {
       startValue: 1,
-      targetValue: 0.5,
+      targetValue: 0,
     },
     someRhythmMap: radialLoopStructuredRhythmMap,
   })
@@ -217,12 +217,13 @@ function AnimationFrame(props: AnimationFrameProps) {
     format: 'hex',
     alpha: 1,
   })
-  const loopNestCellsDataA = getLoopNestCellsData({
+  const loopNestDataA = getLoopNestCellsData({
     sampleCount: 512,
     radialLoopCount: radialLoopStructuredRhythmMap.rhythmPoints.length,
     baseLoopPointsData: loopPointsDataA,
-    getOrthogonalLoopCount: () =>
-      radialLoopStructuredRhythmMap.rhythmPoints.length,
+    getOrthogonalLoopCount: () => {
+      return radialLoopStructuredRhythmMap.rhythmPoints.length
+    },
     getRadialLoopRadiusScalar: (radialLoopIndex) => {
       return radialLoopScalarsA[radialLoopIndex]!
     },
@@ -230,26 +231,32 @@ function AnimationFrame(props: AnimationFrameProps) {
       radialLoopIndex,
       orthogonalLoopIndex,
       sampleAngle
-    ) =>
-      0.1 *
-      radialLoopScalarsA[radialLoopIndex]! *
-      orthogonalLoopScalarsA[orthogonalLoopIndex]! *
-      Math.sin(
-        220 * sampleAngle +
-          Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
-      ),
+    ) => {
+      return (
+        0 *
+        radialLoopScalarsA[radialLoopIndex]! *
+        orthogonalLoopScalarsA[orthogonalLoopIndex]! *
+        Math.sin(
+          220 * sampleAngle +
+            Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
+        )
+      )
+    },
     getOverlayLoopOscillation: (
       radialLoopIndex,
       orthogonalLoopIndex,
       sampleAngle
-    ) =>
-      0.1 *
-      radialLoopScalarsA[radialLoopIndex]! *
-      orthogonalLoopScalarsA[orthogonalLoopIndex]! *
-      Math.sin(
-        211 * sampleAngle +
-          Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
-      ),
+    ) => {
+      return (
+        0 *
+        radialLoopScalarsA[radialLoopIndex]! *
+        orthogonalLoopScalarsA[orthogonalLoopIndex]! *
+        Math.sin(
+          211 * sampleAngle +
+            Math.PI * orthogonalLoopScalarsA[orthogonalLoopIndex]!
+        )
+      )
+    },
     getUnderlayLoopCellFillColor: (radialLoopIndex, orthogonalLoopIndex) => {
       return loopColormapA[
         radialLoopStructuredRhythmMap.rhythmPoints[orthogonalLoopIndex]!
@@ -257,62 +264,60 @@ function AnimationFrame(props: AnimationFrameProps) {
     },
     getLoopCellLength: (radialLoopIndex, orthogonalLoopIndex) => {
       return (
-        0.06 *
+        0.03 *
         radialLoopScalarsA[radialLoopIndex]! *
         orthogonalLoopScalarsA[orthogonalLoopIndex]!
       )
+    },
+    getLoopNestIndex: (radialLoopIndex, orthogonalLoopIndex) => {
+      return orthogonalLoopIndex
     },
   })
   return (
     <svg viewBox={`-1 -1 2 2`}>
       <rect x={-1} y={-1} width={2} height={2} fill={'black'} />
-      {loopNestCellsDataA.map((someRadialLoopNestData, radialLoopIndex) => {
-        return someRadialLoopNestData.map(
-          (
-            [someUnderlayLoopCells, someOverlayLoopCells],
-            orthogonalLoopIndex
-          ) => {
-            const maskId = `${radialLoopIndex}-${orthogonalLoopIndex}`
-            return (
-              <g>
-                <mask id={maskId}>
-                  <rect x={-1} y={-1} width={2} height={2} fill={'white'} />
-                  {someOverlayLoopCells.map((someOverlayLoopCell) => (
-                    <rect
-                      x={
-                        someOverlayLoopCell.cellCenter.x -
-                        someOverlayLoopCell.cellLength / 2
-                      }
-                      y={
-                        someOverlayLoopCell.cellCenter.y -
-                        someOverlayLoopCell.cellLength / 2
-                      }
-                      width={someOverlayLoopCell.cellLength}
-                      height={someOverlayLoopCell.cellLength}
-                      fill={'black'}
-                    />
-                  ))}
-                </mask>
-                <g mask={`url(#${maskId})`}>
-                  {someUnderlayLoopCells.map((someUnderlayLoopCell) => (
-                    <rect
-                      x={
-                        someUnderlayLoopCell.cellCenter.x -
-                        someUnderlayLoopCell.cellLength / 2
-                      }
-                      y={
-                        someUnderlayLoopCell.cellCenter.y -
-                        someUnderlayLoopCell.cellLength / 2
-                      }
-                      width={someUnderlayLoopCell.cellLength}
-                      height={someUnderlayLoopCell.cellLength}
-                      fill={someUnderlayLoopCell.fillColor}
-                    />
-                  ))}
-                </g>
-              </g>
-            )
-          }
+      {loopNestDataA.map((someNestLoopData, nestLoopIndex) => {
+        const maskId = `${nestLoopIndex}`
+        return (
+          <g>
+            <mask id={maskId}>
+              <rect x={-1} y={-1} width={2} height={2} fill={'white'} />
+              {/* {someNestLoopData.overlayLoopCells.map((someOverlayLoopCell) => (
+                <rect
+                  x={
+                    someOverlayLoopCell.cellCenter.x -
+                    someOverlayLoopCell.cellLength / 2
+                  }
+                  y={
+                    someOverlayLoopCell.cellCenter.y -
+                    someOverlayLoopCell.cellLength / 2
+                  }
+                  width={someOverlayLoopCell.cellLength}
+                  height={someOverlayLoopCell.cellLength}
+                  fill={'black'}
+                />
+              ))} */}
+            </mask>
+            <g mask={`url(#${nestLoopIndex})`}>
+              {someNestLoopData.underlayLoopCells.map(
+                (someUnderlayLoopCell) => (
+                  <rect
+                    x={
+                      someUnderlayLoopCell.cellCenter.x -
+                      someUnderlayLoopCell.cellLength / 2
+                    }
+                    y={
+                      someUnderlayLoopCell.cellCenter.y -
+                      someUnderlayLoopCell.cellLength / 2
+                    }
+                    width={someUnderlayLoopCell.cellLength}
+                    height={someUnderlayLoopCell.cellLength}
+                    fill={someUnderlayLoopCell.fillColor}
+                  />
+                )
+              )}
+            </g>
+          </g>
         )
       })}
     </svg>
@@ -347,18 +352,16 @@ interface GetLoopNestCellsDataApi {
     orthogonalLoopIndex: number,
     sampleAngle: number
   ) => number
+  getLoopNestIndex: (
+    radialLoopIndex: number,
+    orthogonalLoopIndex: number
+  ) => number
 }
 
-function getLoopNestCellsData(
-  api: GetLoopNestCellsDataApi
-): Array<
-  Array<
-    [
-      underlayLoopCells: Array<UnderlayLoopCell>,
-      overlayLoopCells: Array<OverlayLoopCell>
-    ]
-  >
-> {
+function getLoopNestCellsData(api: GetLoopNestCellsDataApi): Array<{
+  underlayLoopCells: Array<UnderlayLoopCell>
+  overlayLoopCells: Array<OverlayLoopCell>
+}> {
   const {
     radialLoopCount,
     getOrthogonalLoopCount,
@@ -366,25 +369,18 @@ function getLoopNestCellsData(
     sampleCount,
     getRadialLoopRadiusScalar,
     // getRadialLoopOscillationScalar,
+    getLoopNestIndex,
     getLoopCellLength,
     getUnderlayLoopCellFillColor,
     getUnderlayLoopOscillation,
     getOverlayLoopOscillation,
   } = api
-  const radialLoopNestData: Array<
-    Array<
-      [
-        underlayLoopCells: Array<UnderlayLoopCell>,
-        overlayLoopCells: Array<OverlayLoopCell>
-      ]
-    >
-  > = new Array(radialLoopCount)
-    .fill(undefined)
-    .map((_, someRadialLoopIndex) =>
-      new Array(getOrthogonalLoopCount(someRadialLoopIndex))
-        .fill(undefined)
-        .map(() => [[], []])
-    )
+  const loopNestDataMap: {
+    [loopNestIndex: number]: {
+      underlayLoopCells: Array<UnderlayLoopCell>
+      overlayLoopCells: Array<OverlayLoopCell>
+    }
+  } = {}
   const baseLoopCenter = baseLoopPointsData.samplesCenter
   let baseTracePointIndex = 0
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
@@ -399,71 +395,75 @@ function getLoopNestCellsData(
       pointA: baseLoopCenter,
       pointB: baseTracePoint,
     })
-    radialLoopNestData.forEach(
-      (someOrthogonalLoopNestData, radialLoopIndex) => {
-        const radialLoopRadiusScalar =
-          getRadialLoopRadiusScalar(radialLoopIndex)
-        const radialLoopRadius =
-          radialLoopRadiusScalar * baseTracePointToBaseLoopCenterLength
-        // const radialLoopOscillationScalar = getRadialLoopOscillationScalar(
-        //   radialLoopIndex,
-        //   sampleAngle
-        // )
-        someOrthogonalLoopNestData.forEach(
-          (
-            [someUnderlayLoopCells, someOverlayLoopCells],
-            orthogonalLoopIndex
-          ) => {
-            const loopCellLength = getLoopCellLength(
-              radialLoopIndex,
-              orthogonalLoopIndex
-            )
-            const underlayLoopCellOscillation = getUnderlayLoopOscillation(
-              radialLoopIndex,
-              orthogonalLoopIndex,
-              sampleAngle
-            )
-            const underlayLoopCellRadius =
-              radialLoopRadius + underlayLoopCellOscillation
-            someUnderlayLoopCells.push({
-              cellLength: loopCellLength,
-              fillColor: getUnderlayLoopCellFillColor(
-                radialLoopIndex,
-                orthogonalLoopIndex
-              ),
-              cellCenter: {
-                x:
-                  underlayLoopCellRadius * Math.cos(sampleAngle) +
-                  baseLoopCenter.x,
-                y:
-                  underlayLoopCellRadius * Math.sin(sampleAngle) +
-                  baseLoopCenter.y,
-              },
-            })
-            const overlayLoopCellOscillation = getOverlayLoopOscillation(
-              radialLoopIndex,
-              orthogonalLoopIndex,
-              sampleAngle
-            )
-            const overlayLoopCellRadius =
-              overlayLoopCellOscillation + radialLoopRadius
-            someOverlayLoopCells.push({
-              cellLength: loopCellLength,
-              cellCenter: {
-                x:
-                  overlayLoopCellRadius * Math.cos(sampleAngle) +
-                  baseLoopCenter.x,
-                y:
-                  overlayLoopCellRadius * Math.sin(sampleAngle) +
-                  baseLoopCenter.y,
-              },
-            })
-          }
+    for (
+      let radialLoopIndex = 0;
+      radialLoopIndex < radialLoopCount;
+      radialLoopIndex++
+    ) {
+      const radialLoopRadiusScalar = getRadialLoopRadiusScalar(radialLoopIndex)
+      const radialLoopRadius =
+        radialLoopRadiusScalar * baseTracePointToBaseLoopCenterLength
+      for (
+        let orthogonalLoopIndex = 0;
+        orthogonalLoopIndex < getOrthogonalLoopCount(radialLoopIndex);
+        orthogonalLoopIndex++
+      ) {
+        const loopNestIndex = getLoopNestIndex(
+          radialLoopIndex,
+          orthogonalLoopIndex
         )
+        const targetLoopNestData = loopNestDataMap[loopNestIndex] || {
+          underlayLoopCells: [],
+          overlayLoopCells: [],
+        }
+        loopNestDataMap[loopNestIndex] = targetLoopNestData
+        const loopCellLength = getLoopCellLength(
+          radialLoopIndex,
+          orthogonalLoopIndex
+        )
+        const underlayLoopCellOscillation = getUnderlayLoopOscillation(
+          radialLoopIndex,
+          orthogonalLoopIndex,
+          sampleAngle
+        )
+        const underlayLoopCellRadius =
+          radialLoopRadius + underlayLoopCellOscillation
+        targetLoopNestData.underlayLoopCells.push({
+          cellLength: loopCellLength,
+          fillColor: getUnderlayLoopCellFillColor(
+            radialLoopIndex,
+            orthogonalLoopIndex
+          ),
+          cellCenter: {
+            x:
+              underlayLoopCellRadius * Math.cos(sampleAngle) + baseLoopCenter.x,
+            y:
+              underlayLoopCellRadius * Math.sin(sampleAngle) + baseLoopCenter.y,
+          },
+        })
+        const overlayLoopCellOscillation = getOverlayLoopOscillation(
+          radialLoopIndex,
+          orthogonalLoopIndex,
+          sampleAngle
+        )
+        const overlayLoopCellRadius =
+          overlayLoopCellOscillation + radialLoopRadius
+        targetLoopNestData.overlayLoopCells.push({
+          cellLength: loopCellLength,
+          cellCenter: {
+            x: overlayLoopCellRadius * Math.cos(sampleAngle) + baseLoopCenter.x,
+            y: overlayLoopCellRadius * Math.sin(sampleAngle) + baseLoopCenter.y,
+          },
+        })
       }
-    )
+    }
   }
-  return radialLoopNestData
+  return Object.keys(loopNestDataMap)
+    .sort(
+      (loopNestDataA, loopNestDataB) =>
+        parseInt(loopNestDataA) - parseInt(loopNestDataB)
+    )
+    .map((someLoopNestIndex) => loopNestDataMap[parseInt(someLoopNestIndex)]!)
 }
 
 interface UnderlayLoopCell extends LoopCellBase {
