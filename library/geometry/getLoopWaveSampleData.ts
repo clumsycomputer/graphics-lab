@@ -11,9 +11,9 @@ export function getLoopWaveSampleData(
 ): [loopWaveSample: number, tracePointIndex: number] {
   const { traceAngle, startingTracePointIndex, someLoopPointsData } = api
   const [loopWaveSamplePoint, tracePointIndex] = getTracePointData({
+    someLoopPointsData,
     traceAngle,
     startingTracePointIndex,
-    someLoopPointsData: someLoopPointsData,
   })
   return [
     loopWaveSamplePoint.y - someLoopPointsData.samplesCenter.y,
