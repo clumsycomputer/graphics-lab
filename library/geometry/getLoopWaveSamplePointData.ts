@@ -1,25 +1,32 @@
 import { getLoopPointsData } from './getLoopPointsData'
-import { getTracePointData, GetTracePointDataApi } from './getTracePointData'
-import { Point } from './models'
+import {
+  getTracedLoopPointData,
+  GetTracedLoopPointDataApi,
+} from './getTracedLoopPointData'
+import { LoopPoint } from './models'
 
 export interface GetLoopWaveSamplePointDataApi
-  extends Pick<GetTracePointDataApi, 'traceAngle' | 'startingTracePointIndex'> {
+  extends Pick<
+    GetTracedLoopPointDataApi,
+    'traceAngle' | 'startingTracePointIndex'
+  > {
   someLoopPointsData: ReturnType<typeof getLoopPointsData>
 }
 
 export function getLoopWaveSamplePointData(
   api: GetLoopWaveSamplePointDataApi
-): [loopWaveSamplePoint: Point, tracePointIndex: number] {
+): [loopWaveSamplePoint: LoopPoint, tracePointIndex: number] {
   const { traceAngle, startingTracePointIndex, someLoopPointsData } = api
-  const [loopWaveSamplePoint, tracePointIndex] = getTracePointData({
+  const [loopWaveSamplePoint, tracePointIndex] = getTracedLoopPointData({
     someLoopPointsData,
     traceAngle,
     startingTracePointIndex,
   })
   return [
     {
-      x: loopWaveSamplePoint.x - someLoopPointsData.samplesCenter.x,
-      y: loopWaveSamplePoint.y - someLoopPointsData.samplesCenter.y,
+      ...loopWaveSamplePoint,
+      x: loopWaveSamplePoint.x - someLoopPointsData.loopCenter.x,
+      y: loopWaveSamplePoint.y - someLoopPointsData.loopCenter.y,
     },
     tracePointIndex,
   ]

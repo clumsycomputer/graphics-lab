@@ -1,11 +1,10 @@
-import { InterposedLoopStructure } from '.'
 import {
   getCirclePoint,
   getDistanceBetweenPoints,
   getNormalizedAngleBetweenPoints,
   getRotatedPoint,
 } from './general'
-import { Circle, LoopStructure, Point } from './models'
+import { Circle, InterposedLoopStructure, LoopStructure, Point } from './models'
 
 export interface GetLoopPointApi {
   someLoopStructure: LoopStructure

@@ -15,7 +15,8 @@ export interface Point {
 }
 
 export interface LoopPoint extends Point {
-  centerAngle: number
+  inputAngle: number
+  outputAngle: number
 }
 
 export interface LoopStructure

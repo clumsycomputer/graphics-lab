@@ -9,39 +9,43 @@ export interface GetLoopPointsApi
 }
 
 export function getLoopPointsData(api: GetLoopPointsApi): {
-  samplesCenter: Point
-  samplePoints: Array<LoopPoint>
+  loopCenter: Point
+  loopPoints: Array<LoopPoint>
 } {
   const { sampleCount, someLoopStructure } = api
-  const samplePoints: Array<Point> = []
-  const samplesCenter: Point = { x: 0, y: 0 }
+  const loopPoints: Array<Pick<LoopPoint, 'x' | 'y' | 'inputAngle'>> = []
+  const loopCenter: Point = { x: 0, y: 0 }
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
+    const inputAngle = 2 * Math.PI * (sampleIndex / sampleCount)
     const samplePoint = getNearestLoopPoint({
       someLoopStructure,
-      pointAngle: 2 * Math.PI * (sampleIndex / sampleCount),
+      pointAngle: inputAngle,
     })
-    samplesCenter.x = samplesCenter.x + samplePoint.x
-    samplesCenter.y = samplesCenter.y + samplePoint.y
-    samplePoints.push(samplePoint)
+    loopCenter.x = loopCenter.x + samplePoint.x
+    loopCenter.y = loopCenter.y + samplePoint.y
+    loopPoints.push({
+      ...samplePoint,
+      inputAngle,
+    })
   }
-  samplesCenter.x = samplesCenter.x / samplePoints.length
-  samplesCenter.y = samplesCenter.y / samplePoints.length
+  loopCenter.x = loopCenter.x / loopPoints.length
+  loopCenter.y = loopCenter.y / loopPoints.length
   return {
-    samplesCenter,
-    samplePoints: (samplePoints as Array<LoopPoint>).sort((pointA, pointB) => {
-      if (!pointA.centerAngle) {
-        pointA.centerAngle = getNormalizedAngleBetweenPoints({
-          basePoint: samplesCenter,
+    loopCenter,
+    loopPoints: (loopPoints as Array<LoopPoint>).sort((pointA, pointB) => {
+      if (!pointA.outputAngle) {
+        pointA.outputAngle = getNormalizedAngleBetweenPoints({
+          basePoint: loopCenter,
           targetPoint: pointA,
         })
       }
-      if (!pointB.centerAngle) {
-        pointB.centerAngle = getNormalizedAngleBetweenPoints({
-          basePoint: samplesCenter,
+      if (!pointB.outputAngle) {
+        pointB.outputAngle = getNormalizedAngleBetweenPoints({
+          basePoint: loopCenter,
           targetPoint: pointB,
         })
       }
-      return pointA.centerAngle - pointB.centerAngle
+      return pointA.outputAngle - pointB.outputAngle
     }),
   }
 }

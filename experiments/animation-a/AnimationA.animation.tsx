@@ -5,19 +5,25 @@ import {
   getHarmonicLoopWaveSamplePointData,
   getLoopPointsData,
   getNormalizedAngle,
-  getTracePointData,
+  getTracedLoopPointData,
   getUpdatedLoopStructure,
+  LoopPoint,
   LoopStructure,
   Point,
 } from '@library/geometry'
-import { getRangedRhythmValues, getStructuredRhythmMap } from '@library/rhythm'
+import {
+  getRangedRhythmValues,
+  getStructuredRhythmMap,
+  RhythmStructure,
+  getUpdatedRhythmStructure,
+} from '@library/rhythm'
 import getColormap from 'colormap'
 import React from 'react'
 
 const animationModuleA: AnimationModule = {
   animationName: 'AnimationA',
   frameSize: 2048,
-  frameCount: 10 * 4,
+  frameCount: 10 * 10,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -166,29 +172,30 @@ function AnimationFrame(props: AnimationFrameProps) {
     someLoopStructure: loopStructureA,
     sampleCount: sampleResolution,
   })
-  const radialLoopStructuredRhythmMap = getStructuredRhythmMap({
-    someRhythmStructure: {
-      structureType: 'initialStructure',
-      rhythmResolution: 12,
+  const baseRhythmA: RhythmStructure = {
+    structureType: 'initialStructure',
+    rhythmResolution: 12,
+    rhythmPhase: 0,
+    subStructure: {
+      structureType: 'interposedStructure',
+      rhythmDensity: 11,
+      rhythmOrientation: 0,
       rhythmPhase: 0,
       subStructure: {
         structureType: 'interposedStructure',
-        rhythmDensity: 11,
+        rhythmDensity: 7,
         rhythmOrientation: 0,
         rhythmPhase: 0,
         subStructure: {
-          structureType: 'interposedStructure',
-          rhythmDensity: 7,
+          structureType: 'terminalStructure',
+          rhythmDensity: 5,
           rhythmOrientation: 0,
-          rhythmPhase: 0,
-          subStructure: {
-            structureType: 'terminalStructure',
-            rhythmDensity: 5,
-            rhythmOrientation: 0,
-          },
         },
       },
     },
+  }
+  const radialLoopStructuredRhythmMap = getStructuredRhythmMap({
+    someRhythmStructure: baseRhythmA,
   })
   const radialLoopScalarsA = getRangedRhythmValues({
     someNumberRange: {
@@ -197,15 +204,34 @@ function AnimationFrame(props: AnimationFrameProps) {
     },
     someRhythmMap: radialLoopStructuredRhythmMap,
   })
-  const orthogonalLoopScalarsA = getRangedRhythmValues({
-    someNumberRange: {
-      startValue: 1,
-      targetValue: 0,
-    },
-    someRhythmMap: radialLoopStructuredRhythmMap,
-  })
+  const orthogonalScalarsMap = radialLoopStructuredRhythmMap.rhythmPoints.map(
+    (_, radialLoopIndex) =>
+      getRangedRhythmValues({
+        someNumberRange: {
+          startValue: 1,
+          targetValue: 0,
+        },
+        someRhythmMap: getStructuredRhythmMap({
+          someRhythmStructure: getUpdatedRhythmStructure({
+            baseStructure: baseRhythmA,
+            getScopedStructureUpdates: ({ scopedStructureBase }) => {
+              switch (scopedStructureBase.structureType) {
+                case 'initialStructure':
+                case 'interposedStructure':
+                  return scopedStructureBase
+                case 'terminalStructure':
+                  return {
+                    ...scopedStructureBase,
+                    rhythmOrientation: radialLoopIndex,
+                  }
+              }
+            },
+          }),
+        }),
+      })
+  )
   const loopColormapA = getColormap({
-    colormap: 'plasma',
+    colormap: 'warm',
     nshades: radialLoopStructuredRhythmMap.rhythmResolution,
     format: 'hex',
     alpha: 1,
@@ -215,6 +241,7 @@ function AnimationFrame(props: AnimationFrameProps) {
     orthogonalLoopIndex: number,
     sampleAngle: number
   ) => {
+    const orthogonalScalars = orthogonalScalarsMap[radialLoopIndex]!
     const phaseDirection =
       radialLoopStructuredRhythmMap.rhythmPoints[radialLoopIndex]! % 2 === 0
         ? 1
@@ -222,7 +249,7 @@ function AnimationFrame(props: AnimationFrameProps) {
     return (
       0.1 *
       radialLoopScalarsA[radialLoopIndex]! *
-      orthogonalLoopScalarsA[orthogonalLoopIndex]! *
+      orthogonalScalars[orthogonalLoopIndex]! *
       getHarmonicLoopWaveSamplePointData({
         someLoopPointsData: baseLoopPointsDataA,
         harmonicDistribution: [1, 0.5, 0.25, 0.125],
@@ -235,14 +262,14 @@ function AnimationFrame(props: AnimationFrameProps) {
               frequencyIndex:
                 radialLoopScalarsA[radialLoopIndex]! *
                   radialLoopStructuredRhythmMap.rhythmResolution +
-                orthogonalLoopScalarsA[orthogonalLoopIndex]!,
+                orthogonalScalars[orthogonalLoopIndex]!,
             }) *
               sampleAngle +
             phaseDirection *
               (Math.pow(2, radialLoopIndex + 1) * Math.PI * frameStamp +
                 Math.PI *
                   radialLoopScalarsA[radialLoopIndex]! *
-                  orthogonalLoopScalarsA[orthogonalLoopIndex]!),
+                  orthogonalScalars[orthogonalLoopIndex]!),
         }),
       })[0].y
     )
@@ -273,23 +300,25 @@ function AnimationFrame(props: AnimationFrameProps) {
     getUnderlayLoopOscillation: (
       radialLoopIndex,
       orthogonalLoopIndex,
-      sampleAngle
+      sampleAngle,
+      baseTracePoint
     ) => {
       return getLoopOscillationA(
         radialLoopIndex,
         orthogonalLoopIndex,
-        sampleAngle
+        baseTracePoint.inputAngle
       )
     },
     getOverlayLoopOscillation: (
       radialLoopIndex,
       orthogonalLoopIndex,
-      sampleAngle
+      sampleAngle,
+      baseTracePoint
     ) => {
       return getLoopOscillationA(
         radialLoopIndex,
         orthogonalLoopIndex,
-        sampleAngle + Math.PI / 3
+        baseTracePoint.outputAngle
       )
     },
     getUnderlayLoopCellFillColor: (radialLoopIndex, orthogonalLoopIndex) => {
@@ -299,9 +328,9 @@ function AnimationFrame(props: AnimationFrameProps) {
     },
     getLoopCellLength: (radialLoopIndex, orthogonalLoopIndex) => {
       return (
-        0.02 *
+        0.0275 *
         radialLoopScalarsA[radialLoopIndex]! *
-        orthogonalLoopScalarsA[orthogonalLoopIndex]!
+        orthogonalScalarsMap[radialLoopIndex]![orthogonalLoopIndex]!
       )
     },
     getLoopNestIndex: (radialLoopIndex, orthogonalLoopIndex) => {
@@ -331,10 +360,6 @@ interface GetLoopNestCellsDataApi {
   radialLoopCount: number
   getOrthogonalLoopCount: (radialLoopIndex: number) => number
   getRadialLoopRadiusScalar: (radialLoopIndex: number) => number
-  // getRadialLoopOscillationScalar: (
-  //   radialLoopIndex: number,
-  //   sampleAngle: number
-  // ) => number
   getLoopCellLength: (
     radialLoopIndex: number,
     orthogonalLoopIndex: number
@@ -350,12 +375,14 @@ interface GetLoopNestCellsDataApi {
   getUnderlayLoopOscillation: (
     radialLoopIndex: number,
     orthogonalLoopIndex: number,
-    sampleAngle: number
+    sampleAngle: number,
+    basePoint: LoopPoint
   ) => number
   getOverlayLoopOscillation: (
     radialLoopIndex: number,
     orthogonalLoopIndex: number,
-    sampleAngle: number
+    sampleAngle: number,
+    basePoint: LoopPoint
   ) => number
   getLoopNestIndex: (
     radialLoopIndex: number,
@@ -373,7 +400,6 @@ function getLoopNestCellsData(api: GetLoopNestCellsDataApi): Array<{
     baseLoopPointsData,
     sampleCount,
     getRadialLoopRadiusScalar,
-    // getRadialLoopOscillationScalar,
     getLoopNestIndex,
     getLoopCellLength,
     getLoopCenterShift,
@@ -387,11 +413,11 @@ function getLoopNestCellsData(api: GetLoopNestCellsDataApi): Array<{
       overlayLoopCells: Array<OverlayLoopCell>
     }
   } = {}
-  const baseLoopCenter = baseLoopPointsData.samplesCenter
+  const baseLoopCenter = baseLoopPointsData.loopCenter
   let baseTracePointIndex = 0
   for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
     const sampleAngle = 2 * Math.PI * (sampleIndex / sampleCount)
-    const [baseTracePoint, nextBaseTracePointIndex] = getTracePointData({
+    const [baseTracePoint, nextBaseTracePointIndex] = getTracedLoopPointData({
       someLoopPointsData: baseLoopPointsData,
       startingTracePointIndex: baseTracePointIndex,
       traceAngle: sampleAngle,
@@ -434,7 +460,8 @@ function getLoopNestCellsData(api: GetLoopNestCellsDataApi): Array<{
         const underlayLoopCellOscillation = getUnderlayLoopOscillation(
           radialLoopIndex,
           orthogonalLoopIndex,
-          sampleAngle
+          sampleAngle,
+          baseTracePoint
         )
         const underlayLoopCellRadius =
           radialLoopRadius + underlayLoopCellOscillation
@@ -458,7 +485,8 @@ function getLoopNestCellsData(api: GetLoopNestCellsDataApi): Array<{
         const overlayLoopCellOscillation = getOverlayLoopOscillation(
           radialLoopIndex,
           orthogonalLoopIndex,
-          sampleAngle
+          sampleAngle,
+          baseTracePoint
         )
         const overlayLoopCellRadius =
           overlayLoopCellOscillation + radialLoopRadius
