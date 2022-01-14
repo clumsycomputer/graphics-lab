@@ -1,7 +1,7 @@
 import {
   getUpdatedRecursiveSpatialStructure,
   GetUpdatedRecursiveSpatialStructureApi,
-} from '@library/general'
+} from 'legacy-library-b/general'
 import { RhythmStructure } from './models'
 
 export interface GetUpdatedRhytyhmStructureApi

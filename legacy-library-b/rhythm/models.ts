@@ -2,7 +2,7 @@ import {
   InterposedSpatialStructureBase,
   RecursiveSpatialStructure,
   TerminalSpatialStructureBase,
-} from '@library/general'
+} from 'legacy-library-b/general'
 
 export type Rhythm = Array<boolean>
 

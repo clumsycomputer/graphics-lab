@@ -1,29 +1,30 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
-import { getWaveFrequency } from '@library/general'
+import { getWaveFrequency } from 'legacy-library-b/general'
 import {
   getDistanceBetweenPoints,
   getHarmonicLoopWaveSamplePointData,
   getLoopPointsData,
   getNormalizedAngle,
   getTracedLoopPointData,
+  GetTracedLoopPointDataApi,
   getUpdatedLoopStructure,
   LoopPoint,
   LoopStructure,
   Point,
-} from '@library/geometry'
+} from 'legacy-library-b/geometry'
 import {
   getRangedRhythmValues,
   getStructuredRhythmMap,
   RhythmStructure,
   getUpdatedRhythmStructure,
-} from '@library/rhythm'
+} from 'legacy-library-b/rhythm'
 import getColormap from 'colormap'
 import React from 'react'
 
 const animationModuleA: AnimationModule = {
   animationName: 'AnimationA',
   frameSize: 2048,
-  frameCount: 10 * 10,
+  frameCount: 10 * 4,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -100,7 +101,7 @@ function AnimationFrame(props: AnimationFrameProps) {
     structureType: 'initialStructure',
     loopBase: {
       center: { x: 0, y: 0 },
-      radius: 0.6,
+      radius: 0.4,
     },
     subLoopRotationAngle: 0,
     subStructure: {
@@ -142,7 +143,23 @@ function AnimationFrame(props: AnimationFrameProps) {
     getScopedStructureUpdates: ({ scopedStructureBase, structureIndex }) => {
       switch (scopedStructureBase.structureType) {
         case 'initialStructure':
-          return scopedStructureBase
+          return {
+            ...scopedStructureBase,
+            loopBase: {
+              ...scopedStructureBase.loopBase,
+              radius: scopedStructureBase.loopBase.radius,
+              // 0.02 *
+              //   getHarmonicLoopWaveSamplePointData({
+              //     someLoopPointsData: baseLoopPointsDataA,
+              //     harmonicDistribution: [1],
+              //     startingTracePointIndices: [0],
+              //     traceAngle: getNormalizedAngle({
+              //       someAngle: 2 * Math.PI * frameStamp,
+              //     }),
+              //   })[0].y +
+              // scopedStructureBase.loopBase.radius,
+            },
+          }
         case 'interposedStructure':
         case 'terminalStructure':
           return {
@@ -156,8 +173,8 @@ function AnimationFrame(props: AnimationFrameProps) {
               baseRotationAngleScalarValues[structureIndex - 1]! *
                 getHarmonicLoopWaveSamplePointData({
                   someLoopPointsData: baseLoopPointsDataA,
-                  harmonicDistribution: [1, 0.5],
-                  startingTracePointIndices: [0, 0],
+                  harmonicDistribution: [1, 0.5, 0.25, 0.125],
+                  startingTracePointIndices: [0, 0, 0, 0],
                   traceAngle: getNormalizedAngle({
                     someAngle:
                       Math.pow(2, structureIndex) * Math.PI * frameStamp,
@@ -231,8 +248,8 @@ function AnimationFrame(props: AnimationFrameProps) {
       })
   )
   const loopColormapA = getColormap({
-    colormap: 'warm',
     nshades: radialLoopStructuredRhythmMap.rhythmResolution,
+    colormap: 'warm',
     format: 'hex',
     alpha: 1,
   })
@@ -575,4 +592,92 @@ function LayeredLoopGraphic(props: LayeredLoopGraphicProps) {
       </g>
     </g>
   )
+}
+
+interface LoopSignalShape {
+  loopPointsData: ReturnType<typeof getLoopPointsData>
+  getAmplitudeScalar: (sampleStamp: number) => number
+  getAmplitudeOffset: (sampleStamp: number) => number
+  getTimeScalar: (sampleStamp: number) => number
+  getTimeOffset: (sampleStamp: number) => number
+}
+
+interface GetColorPaletteApi {
+  redSignalShape: LoopSignalShape
+  greenSignalShape: LoopSignalShape
+  blueSignalShape: LoopSignalShape
+  paletteResolution: number
+}
+
+function getColorPalette(api: GetColorPaletteApi) {
+  const {
+    paletteResolution,
+    redSignalShape,
+    greenSignalShape,
+    blueSignalShape,
+  } = api
+  const colorPaletteResult: Array<string> = []
+  for (let colorIndex = 0; colorIndex < paletteResolution; colorIndex++) {
+    const sampleStamp = colorIndex / paletteResolution
+    colorPaletteResult.push(
+      getColorSample({
+        redSampleApi: {
+          sampleStamp,
+          loopSignalShape: redSignalShape,
+          startingTracePointIndex: 0,
+        },
+        greenSampleApi: {
+          sampleStamp,
+          loopSignalShape: greenSignalShape,
+          startingTracePointIndex: 0,
+        },
+        blueSampleApi: {
+          sampleStamp,
+          loopSignalShape: blueSignalShape,
+          startingTracePointIndex: 0,
+        },
+      })
+    )
+  }
+  return colorPaletteResult
+}
+
+interface GetColorSampleApi {
+  redSampleApi: GetCosineSampleDataApi
+  greenSampleApi: GetCosineSampleDataApi
+  blueSampleApi: GetCosineSampleDataApi
+}
+
+function getColorSample(api: GetColorSampleApi): string {
+  const { redSampleApi, greenSampleApi, blueSampleApi } = api
+  const [redSample] = getCosineSampleData(redSampleApi)
+  const [greenSample] = getCosineSampleData(greenSampleApi)
+  const [blueSample] = getCosineSampleData(blueSampleApi)
+  return `rgb(${255 * redSample},${255 * greenSample},${255 * blueSample})`
+}
+
+interface GetCosineSampleDataApi
+  extends Pick<GetTracedLoopPointDataApi, 'startingTracePointIndex'> {
+  loopSignalShape: LoopSignalShape
+  sampleStamp: number
+}
+
+function getCosineSampleData(
+  api: GetCosineSampleDataApi
+): [cosineSample: number, sampleTracedPointIndex: number] {
+  const { startingTracePointIndex, loopSignalShape, sampleStamp } = api
+  const [sampleTracedPoint, sampleTracedPointIndex] = getTracedLoopPointData({
+    startingTracePointIndex,
+    someLoopPointsData: loopSignalShape.loopPointsData,
+    traceAngle: getNormalizedAngle({
+      someAngle:
+        loopSignalShape.getTimeScalar(sampleStamp) * 2 * Math.PI * sampleStamp +
+        2 * Math.PI * loopSignalShape.getTimeOffset(sampleStamp),
+    }),
+  })
+  return [
+    loopSignalShape.getAmplitudeScalar(sampleStamp) * sampleTracedPoint.x +
+      loopSignalShape.getAmplitudeOffset(sampleStamp),
+    sampleTracedPointIndex,
+  ]
 }

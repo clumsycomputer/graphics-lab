@@ -7,8 +7,11 @@ import {
   getNormalizedAngle,
   getUpdatedLoopStructure,
   LoopStructure,
-} from '@library/geometry'
-import { getRangedRhythmValues, getStructuredRhythmMap } from '@library/rhythm'
+} from 'legacy-library-b/geometry'
+import {
+  getRangedRhythmValues,
+  getStructuredRhythmMap,
+} from 'legacy-library-b/rhythm'
 import React from 'react'
 
 const loopDiagramAnimationModule: AnimationModule = {
