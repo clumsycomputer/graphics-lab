@@ -1,3 +1,12 @@
+export type Point = [x: number, y: number]
+
+export type AsymPoint = [x: number, y: number, inputAngle: number]
+
+export interface Circle {
+  center: Point
+  radius: number
+}
+
 export interface RecursiveSpatialStructure<
   InterposedSpatialStructure extends InterposedSpatialStructureBase<SubSpatialStructure> = InterposedSpatialStructureBase<any>,
   TerminalSpatialStructure extends TerminalSpatialStructureBase = TerminalSpatialStructureBase,
@@ -39,4 +48,35 @@ interface SubSpatialStructureBase {}
 
 interface RecursiveSpatialStructureBase<StructureType extends string> {
   structureType: StructureType
+}
+
+export interface LoopStructure
+  extends RecursiveSpatialStructure<
+      InterposedLoopStructure,
+      TerminalLoopStructure
+    >,
+    BaseLoopStructureBase {
+  loopBase: Circle
+}
+
+export interface InterposedLoopStructure
+  extends InterposedSpatialStructureBase<
+      InterposedLoopStructure | TerminalLoopStructure
+    >,
+    BaseLoopStructureBase,
+    SubLoopStructureBase {}
+
+export interface TerminalLoopStructure
+  extends TerminalSpatialStructureBase,
+    SubLoopStructureBase {}
+
+interface BaseLoopStructureBase {
+  subLoopRotationAngle: number
+}
+
+interface SubLoopStructureBase {
+  relativeFoundationDepth: number
+  relativeFoundationRadius: number
+  foundationPhaseAngle: number
+  baseOrientationAngle: number
 }
