@@ -1,7 +1,7 @@
 import {
   getUpdatedRecursiveSpatialStructure,
   GetUpdatedRecursiveSpatialStructureApi,
-} from './general'
+} from '../general'
 import { LoopStructure } from './models'
 
 export interface GetUpdatedLoopStructureApi

@@ -1,4 +1,11 @@
-import { Circle, Point } from './models'
+import {
+  Circle,
+  InitialSpatialStructureBase,
+  InterposedSpatialStructureBase,
+  Point,
+  RecursiveSpatialStructure,
+  TerminalSpatialStructureBase,
+} from './models'
 
 export interface GetCirclePointApi {
   someCircle: Circle
@@ -130,13 +137,6 @@ export function getIntersectionPoint(api: GetIntersectionPointApi): Point {
     (deltaYB * deltaXA - deltaXB * deltaYA)
   return [lineA[0][0] + slopeA * deltaXA, lineA[0][1] + slopeA * deltaYA]
 }
-
-import {
-  InitialSpatialStructureBase,
-  InterposedSpatialStructureBase,
-  RecursiveSpatialStructure,
-  TerminalSpatialStructureBase,
-} from './models'
 
 export interface GetUpdatedRecursiveSpatialStructureApi<
   BaseRecursiveSpatialStructure extends RecursiveSpatialStructure

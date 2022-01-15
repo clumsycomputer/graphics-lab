@@ -1,14 +1,14 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
-import { getLoopPoint } from '@library/getLoopPoint'
-import { getLoopPointsData } from '@library/getLoopPointsData'
-import { getUpdatedLoopStructure } from '@library/getUpdatedLoopStructure'
-import { LoopStructure } from '@library/models'
+import { getLoopPointsData } from '@library/loop/getLoopPointsData'
+import { getUpdatedLoopStructure } from '@library/loop/getUpdatedLoopStructure'
+import { LoopStructure } from '@library/loop/models'
+import { getOscillatedLoopPoints } from '@library/loop/getOscillatedLoopPoints'
 import React from 'react'
 
 const skyworksAnimationMoudle: AnimationModule = {
   animationName: 'Skyworks',
   frameSize: 2048,
-  frameCount: 1,
+  frameCount: 128,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -24,7 +24,8 @@ interface SkyworksFrameProps {
 }
 
 function SkyworksFrame(props: SkyworksFrameProps) {
-  const {} = props
+  const { frameIndex, frameCount } = props
+  const frameStamp = frameIndex / frameCount
   const baseLoopStructureA: LoopStructure = {
     structureType: 'initialStructure',
     subLoopRotationAngle: 0,
@@ -48,7 +49,7 @@ function SkyworksFrame(props: SkyworksFrameProps) {
       },
     },
   }
-  const branchResolution = 24
+  const branchResolution = 7
   const branchLoopStructuresA = new Array(branchResolution)
     .fill(undefined)
     .map((_, branchLoopIndex) => {
@@ -66,18 +67,16 @@ function SkyworksFrame(props: SkyworksFrameProps) {
                 loopBase: {
                   center: [
                     scopedStructureBase.loopBase.center[0] +
-                      (40 / branchResolution) *
+                      ((frameStamp * 40) / branchResolution) *
                         branchLoopIndex *
                         Math.cos(
-                          ((2 * Math.PI) / 5 / branchResolution) *
-                            branchLoopIndex
+                          ((0.3 * Math.PI) / branchResolution) * branchLoopIndex
                         ),
                     scopedStructureBase.loopBase.center[1] +
-                      (40 / branchResolution) *
+                      ((frameStamp * 40) / branchResolution) *
                         branchLoopIndex *
                         Math.sin(
-                          ((2 * Math.PI) / 5 / branchResolution) *
-                            branchLoopIndex
+                          ((0.3 * Math.PI) / branchResolution) * branchLoopIndex
                         ),
                   ],
                   radius:
@@ -92,22 +91,28 @@ function SkyworksFrame(props: SkyworksFrameProps) {
                 ...scopedStructureBase,
                 relativeFoundationDepth:
                   scopedStructureBase.relativeFoundationDepth +
-                  (scopedStructureBase.relativeFoundationDepth /
-                    7 /
-                    branchResolution) *
+                  frameStamp *
+                    (scopedStructureBase.relativeFoundationDepth /
+                      7 /
+                      branchResolution) *
                     branchLoopIndex,
                 relativeFoundationRadius:
                   scopedStructureBase.relativeFoundationRadius -
-                  (scopedStructureBase.relativeFoundationRadius /
-                    7 /
-                    branchResolution) *
+                  frameStamp *
+                    (scopedStructureBase.relativeFoundationRadius /
+                      7 /
+                      branchResolution) *
                     branchLoopIndex,
                 foundationPhaseAngle:
                   scopedStructureBase.foundationPhaseAngle +
-                  (Math.PI / 2 / branchResolution) * branchLoopIndex,
+                  frameStamp *
+                    (Math.PI / 4 / branchResolution) *
+                    branchLoopIndex,
                 baseOrientationAngle:
                   scopedStructureBase.baseOrientationAngle +
-                  (Math.PI / 2 / branchResolution) * branchLoopIndex,
+                  frameStamp *
+                    (Math.PI / 4 / branchResolution) *
+                    branchLoopIndex,
               }
           }
         },
@@ -117,25 +122,37 @@ function SkyworksFrame(props: SkyworksFrameProps) {
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
-      {branchLoopStructuresA.map((someBranchLoopStructure) => {
-        const currentLoopPointsData = getLoopPointsData({
-          sampleCount: 512,
-          someLoopStructure: someBranchLoopStructure,
-        })
-        return currentLoopPointsData.loopPoints.map((someLoopPoint) => {
-          const cellLength = 0.5
-          const halfCellLength = cellLength / 2
-          return (
-            <rect
-              x={someLoopPoint[0] - halfCellLength}
-              y={someLoopPoint[1] - halfCellLength}
-              width={cellLength}
-              height={cellLength}
-              fill={'white'}
-            />
-          )
-        })
-      })}
+      {branchLoopStructuresA.map(
+        (someBranchLoopStructure, branchStructureIndex) => {
+          const currentLoopPointsData = getLoopPointsData({
+            sampleCount: 512,
+            someLoopStructure: someBranchLoopStructure,
+          })
+          const oscillatedLoopPoints = getOscillatedLoopPoints({
+            someLoopPointsData: currentLoopPointsData,
+            sampleCount: currentLoopPointsData.loopPoints.length,
+            getPointOscillationDelta: (sampleAngle, basePointRadius) => {
+              return (
+                (basePointRadius / 3) * Math.sin(220 * sampleAngle) * frameStamp
+              )
+            },
+          })
+          return oscillatedLoopPoints.map((someLoopPoint) => {
+            const cellLength =
+              1 * (1 - branchStructureIndex / branchLoopStructuresA.length)
+            const halfCellLength = cellLength / 2
+            return (
+              <rect
+                x={someLoopPoint[0] - halfCellLength}
+                y={someLoopPoint[1] - halfCellLength}
+                width={cellLength}
+                height={cellLength}
+                fill={'white'}
+              />
+            )
+          })
+        }
+      )}
     </svg>
   )
 }

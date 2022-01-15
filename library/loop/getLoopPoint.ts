@@ -3,31 +3,32 @@ import {
   getDistanceBetweenPoints,
   getNormalizedAngleBetweenPoints,
   getRotatedPoint,
-} from './general'
-import { Circle, InterposedLoopStructure, LoopStructure, Point } from './models'
+} from '../general'
+import { Circle, Point } from '../models'
+import { InterposedLoopStructure, LoopStructure } from './models'
 
 export interface GetLoopPointApi {
   someLoopStructure: LoopStructure
-  pointAngle: number
+  inputAngle: number
 }
 
 export function getLoopPoint(api: GetLoopPointApi): Point {
-  const { pointAngle, someLoopStructure } = api
+  const { inputAngle, someLoopStructure } = api
   return getBaseLoopStructurePoint({
-    pointAngle,
+    inputAngle,
     baseCircle: someLoopStructure.loopBase,
     someBaseLoopStructure: someLoopStructure,
   })
 }
 
-interface GetBaseLoopStructurePointApi {
-  pointAngle: number
-  baseCircle: Circle
+interface GetBaseLoopStructurePointApi
+  extends Pick<GetLoopPointApi, 'inputAngle'> {
+  baseCircle: GetLoopPointApi['someLoopStructure']['loopBase']
   someBaseLoopStructure: LoopStructure | InterposedLoopStructure
 }
 
 function getBaseLoopStructurePoint(api: GetBaseLoopStructurePointApi): Point {
-  const { someBaseLoopStructure, baseCircle, pointAngle } = api
+  const { someBaseLoopStructure, baseCircle, inputAngle } = api
   const foundationCircleDepth =
     someBaseLoopStructure.subStructure.relativeFoundationDepth *
     baseCircle.radius
@@ -47,12 +48,12 @@ function getBaseLoopStructurePoint(api: GetBaseLoopStructurePointApi): Point {
   const subLoopPoint =
     someBaseLoopStructure.subStructure.structureType === 'interposedStructure'
       ? getBaseLoopStructurePoint({
-          pointAngle,
+          inputAngle,
           baseCircle: unrotatedFoundationCircle,
           someBaseLoopStructure: someBaseLoopStructure.subStructure,
         })
       : getCirclePoint({
-          pointAngle,
+          pointAngle: inputAngle,
           someCircle: unrotatedFoundationCircle,
         })
   const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
