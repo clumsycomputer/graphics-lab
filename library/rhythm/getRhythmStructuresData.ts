@@ -17,7 +17,7 @@ export function getRhythmStructuresData(
         .map((_, containerCellIndex) => containerCellIndex)
   const currentRhythmStructureData = getRhythmStructureData({
     structureBasePoints,
-    detachedStructure: {
+    isolatedStructure: {
       rhythmResolution: someRhythmStructure.rhythmResolution,
       rhythmPhase: someRhythmStructure.rhythmPhase,
       rhythmDensity: someRhythmStructure.subStructure.rhythmDensity,
@@ -44,51 +44,51 @@ export function getRhythmStructuresData(
 }
 
 interface GetRhythmStructureDataApi {
-  detachedStructure: BasicRhythmStructure
+  isolatedStructure: BasicRhythmStructure
   structureBasePoints: RhythmPoints
 }
 
 function getRhythmStructureData(api: GetRhythmStructureDataApi): {
-  detachedStructure: BasicRhythmStructure
-  detachedPoints: RhythmPoints
+  isolatedStructure: BasicRhythmStructure
+  isolatedPoints: RhythmPoints
   structurePoints: RhythmPoints
 } {
-  const { detachedStructure, structureBasePoints } = api
+  const { isolatedStructure, structureBasePoints } = api
   const rhythmStructureDataResult = {
-    detachedStructure,
-    detachedPoints: new Array<number>(detachedStructure.rhythmDensity),
-    structurePoints: new Array<number>(detachedStructure.rhythmDensity),
+    isolatedStructure,
+    isolatedPoints: new Array<number>(isolatedStructure.rhythmDensity),
+    structurePoints: new Array<number>(isolatedStructure.rhythmDensity),
   }
   getEuclideanRhythm({
-    lhsCount: detachedStructure.rhythmDensity,
+    lhsCount: isolatedStructure.rhythmDensity,
     rhsCount:
-      detachedStructure.rhythmResolution - detachedStructure.rhythmDensity,
+      isolatedStructure.rhythmResolution - isolatedStructure.rhythmDensity,
     lhsRhythm: [true],
     rhsRhythm: [false],
   })
     .reduce<RhythmPoints>(
-      (detachedPointsBaseResult, someRhythmSlot, rhythmSlotIndex) => {
+      (isolatedPointsBaseResult, someRhythmSlot, rhythmSlotIndex) => {
         if (someRhythmSlot === true) {
-          detachedPointsBaseResult.push(rhythmSlotIndex)
+          isolatedPointsBaseResult.push(rhythmSlotIndex)
         }
-        return detachedPointsBaseResult
+        return isolatedPointsBaseResult
       },
       []
     )
-    .forEach((someDetachedPointBase, pointIndex, detachedPointsBase) => {
+    .forEach((someIsolatedPointBase, pointIndex, isolatedPointsBase) => {
       const rhythmOrientationPhase =
-        detachedPointsBase[detachedStructure.rhythmOrientation]!
-      const detachedPoint =
-        (someDetachedPointBase -
+        isolatedPointsBase[isolatedStructure.rhythmOrientation]!
+      const isolatedPoint =
+        (someIsolatedPointBase -
           rhythmOrientationPhase -
-          detachedStructure.rhythmPhase +
-          detachedStructure.rhythmResolution) %
-        detachedStructure.rhythmResolution
-      const structurePoint = structureBasePoints[detachedPoint]!
-      rhythmStructureDataResult.detachedPoints[pointIndex] = detachedPoint
+          isolatedStructure.rhythmPhase +
+          isolatedStructure.rhythmResolution) %
+        isolatedStructure.rhythmResolution
+      const structurePoint = structureBasePoints[isolatedPoint]!
+      rhythmStructureDataResult.isolatedPoints[pointIndex] = isolatedPoint
       rhythmStructureDataResult.structurePoints[pointIndex] = structurePoint
     })
-  rhythmStructureDataResult.detachedPoints.sort(
+  rhythmStructureDataResult.isolatedPoints.sort(
     (pointA, pointB) => pointA - pointB
   )
   rhythmStructureDataResult.structurePoints.sort(

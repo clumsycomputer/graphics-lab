@@ -41,8 +41,68 @@ function SkyworksFrame(props: SkyworksFrameProps) {
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
       <LoopCells
+        cellLength={0.4}
         getFillColor={(pointIndex) => {
-          return '#ff5e87'
+          return pointIndex % 2 === 0
+            ? pointIndex % 4 === 0
+              ? '#5effd7'
+              : '#ff5e87'
+            : pointIndex % 3 === 0
+            ? '#ffd75e'
+            : '#ff875e'
+        }}
+        someCellPoints={getLoopCellPoints({
+          sampleCount: 3 * 1024,
+          getPointOscillationDelta: (sampleAngle, basePointRadius) => {
+            return (Math.sin(220 * sampleAngle) * basePointRadius) / 2
+          },
+          someLoopStructure: {
+            structureType: 'initialStructure',
+            loopBase: {
+              center: [50, 50],
+              radius: 20,
+            },
+            subLoopRotationAngle: getRelativeAngle({
+              relativeAngle: 0,
+            }),
+            subStructure: {
+              structureType: 'interposedStructure',
+              baseOrientationAngle: getRelativeAngle({
+                relativeAngle: 0.1,
+              }),
+              relativeSubDepth: 0.1,
+              relativeSubRadius: 0.95,
+              subPhaseAngle: getRelativeAngle({
+                relativeAngle: 0.2,
+              }),
+              subLoopRotationAngle: getRelativeAngle({
+                relativeAngle: 0.1,
+              }),
+              subStructure: {
+                structureType: 'terminalStructure',
+                baseOrientationAngle: getRelativeAngle({
+                  relativeAngle: 0.2,
+                }),
+                relativeSubDepth: 0.2,
+                relativeSubRadius: 1,
+                subPhaseAngle: getRelativeAngle({
+                  relativeAngle: 0.2,
+                }),
+              },
+            },
+          },
+        })}
+      />
+      <LoopCells
+        cellLength={0.4}
+        getFillColor={(pointIndex) => {
+          return pointIndex % 2 === 0
+            ? pointIndex % 4 === 0
+              ? '#5effd7'
+              : '#ff5e87'
+            : pointIndex % 3 === 0
+            ? '#ffd75e'
+            : '#ff875e'
         }}
         someCellPoints={getLoopCellPoints({
           sampleCount: 4 * 1024,
@@ -91,16 +151,16 @@ function SkyworksFrame(props: SkyworksFrameProps) {
 }
 
 interface LoopCellsProps {
+  cellLength: number
   someCellPoints: Array<Point>
   getFillColor: (pointIndex: number) => string
 }
 
 function LoopCells(props: LoopCellsProps) {
-  const { someCellPoints, getFillColor } = props
+  const { someCellPoints, cellLength, getFillColor } = props
   return (
     <Fragment>
       {someCellPoints.map((someLoopPoint, pointIndex) => {
-        const cellLength = 0.4
         const halfCellLength = cellLength / 2
         return (
           <rect
