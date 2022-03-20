@@ -1,5 +1,4 @@
 import { AnimationModule } from '@clumsycomputer/graphics-renderer'
-import { getNormalizedAngle } from '@library/general'
 import {
   getLoopPointsData,
   GetLoopPointsDataApi,
@@ -8,18 +7,15 @@ import {
   getOscillatedLoopPoints,
   GetOscillatedLoopPointsApi,
 } from '@library/loop/getOscillatedLoopPoints'
-import {
-  getTracedLoopPointData,
-  GetTracedLoopPointDataApi,
-} from '@library/loop/getTracedLoopPointData'
 import { LoopStructure } from '@library/loop/models'
 import { Point } from '@library/models'
-import React, { Fragment, SVGProps } from 'react'
+import { getStructuredRhythmMap } from '@library/rhythm/getStructuredRhythmMap'
+import React, { Fragment } from 'react'
 
 const skyworksAnimationMoudle: AnimationModule = {
   animationName: 'Skyworks',
   frameSize: 2048,
-  frameCount: 40,
+  frameCount: 120,
   animationSettings: {
     frameRate: 10,
     constantRateFactor: 15,
@@ -37,17 +33,106 @@ interface SkyworksFrameProps {
 function SkyworksFrame(props: SkyworksFrameProps) {
   const { frameIndex, frameCount } = props
   const frameStamp = frameIndex / frameCount
+  const loopStructureA: LoopStructure = {
+    structureType: 'initialStructure',
+    loopBase: {
+      center: [50, 50],
+      radius: 20,
+    },
+    subLoopRotationAngle: getRelativeAngle({
+      relativeAngle: 0,
+    }),
+    subStructure: {
+      structureType: 'interposedStructure',
+      baseOrientationAngle: getRelativeAngle({
+        relativeAngle: (0.1 - frameStamp) % 1,
+      }),
+      relativeSubDepth: 0.1,
+      relativeSubRadius: 0.95,
+      subPhaseAngle: getRelativeAngle({
+        relativeAngle: 0.2,
+      }),
+      subLoopRotationAngle: getRelativeAngle({
+        relativeAngle: (0.1 + frameStamp) % 1,
+      }),
+      subStructure: {
+        structureType: 'terminalStructure',
+        baseOrientationAngle: getRelativeAngle({
+          relativeAngle: (0.2 + frameStamp) % 1,
+        }),
+        relativeSubDepth: 0.2,
+        relativeSubRadius: 1,
+        subPhaseAngle: getRelativeAngle({
+          relativeAngle: 0.2,
+        }),
+      },
+    },
+  }
+  const fillColorRhythmMapA = getStructuredRhythmMap({
+    someRhythmStructure: {
+      structureType: 'initialStructure',
+      rhythmResolution: 120,
+      rhythmPhase: 0,
+      subStructure: {
+        structureType: 'terminalStructure',
+        rhythmDensity: 70,
+        rhythmOrientation: 40,
+      },
+    },
+  })
+  const colorShiftRhythmA = fillColorRhythmMapA.rhythmPoints.reduce(
+    (colorShiftRhythmResult, someRhythmPoint) => {
+      colorShiftRhythmResult[someRhythmPoint] = true
+      return colorShiftRhythmResult
+    },
+    new Array<boolean>(fillColorRhythmMapA.rhythmResolution).fill(false)
+  )
+  let shiftValueA = 0
+  const colorShiftMapA = colorShiftRhythmA.map((someRhythmCellValue) => {
+    if (someRhythmCellValue) {
+      shiftValueA = shiftValueA + 1
+    }
+    return shiftValueA
+  })
+  const fillColorRhythmMapB = getStructuredRhythmMap({
+    someRhythmStructure: {
+      structureType: 'initialStructure',
+      rhythmResolution: 120,
+      rhythmPhase: 0,
+      subStructure: {
+        structureType: 'terminalStructure',
+        rhythmDensity: 50,
+        rhythmOrientation: 30,
+      },
+    },
+  })
+
+  const colorShiftRhythmB = fillColorRhythmMapB.rhythmPoints.reduce(
+    (colorShiftRhythmResult, someRhythmPoint) => {
+      colorShiftRhythmResult[someRhythmPoint] = true
+      return colorShiftRhythmResult
+    },
+    new Array<boolean>(fillColorRhythmMapB.rhythmResolution).fill(false)
+  )
+  let shiftValueB = 0
+  const colorShiftMapB = colorShiftRhythmB.map((someRhythmCellValue) => {
+    if (someRhythmCellValue) {
+      shiftValueB = shiftValueB + 1
+    }
+    return shiftValueB
+  })
   return (
     <svg viewBox={`0 0 100 100`}>
       <rect x={0} y={0} width={100} height={100} fill={'black'} />
       <LoopCells
         cellLength={0.4}
         getFillColor={(pointIndex) => {
-          return pointIndex % 2 === 0
-            ? pointIndex % 4 === 0
+          const colorIndex = pointIndex + colorShiftMapA[frameIndex]!
+          return colorIndex % 2 === 0
+            ? colorIndex % 4 === 0
               ? '#5effd7'
               : '#ff5e87'
-            : pointIndex % 3 === 0
+            : colorIndex % 3 === 0
             ? '#ffd75e'
             : '#ff875e'
         }}
@@ -56,51 +141,18 @@ function SkyworksFrame(props: SkyworksFrameProps) {
           getPointOscillationDelta: (sampleAngle, basePointRadius) => {
             return (Math.sin(220 * sampleAngle) * basePointRadius) / 2
           },
-          someLoopStructure: {
-            structureType: 'initialStructure',
-            loopBase: {
-              center: [50, 50],
-              radius: 20,
-            },
-            subLoopRotationAngle: getRelativeAngle({
-              relativeAngle: 0,
-            }),
-            subStructure: {
-              structureType: 'interposedStructure',
-              baseOrientationAngle: getRelativeAngle({
-                relativeAngle: 0.1,
-              }),
-              relativeSubDepth: 0.1,
-              relativeSubRadius: 0.95,
-              subPhaseAngle: getRelativeAngle({
-                relativeAngle: 0.2,
-              }),
-              subLoopRotationAngle: getRelativeAngle({
-                relativeAngle: 0.1,
-              }),
-              subStructure: {
-                structureType: 'terminalStructure',
-                baseOrientationAngle: getRelativeAngle({
-                  relativeAngle: 0.2,
-                }),
-                relativeSubDepth: 0.2,
-                relativeSubRadius: 1,
-                subPhaseAngle: getRelativeAngle({
-                  relativeAngle: 0.2,
-                }),
-              },
-            },
-          },
+          someLoopStructure: loopStructureA,
         })}
       />
       <LoopCells
         cellLength={0.4}
         getFillColor={(pointIndex) => {
-          return pointIndex % 2 === 0
-            ? pointIndex % 4 === 0
+          const colorIndex = pointIndex + colorShiftMapB[frameIndex]!
+          return colorIndex % 2 === 0
+            ? colorIndex % 4 === 0
               ? '#5effd7'
               : '#ff5e87'
-            : pointIndex % 3 === 0
+            : colorIndex % 3 === 0
             ? '#ffd75e'
             : '#ff875e'
         }}
@@ -109,41 +161,7 @@ function SkyworksFrame(props: SkyworksFrameProps) {
           getPointOscillationDelta: (sampleAngle, basePointRadius) => {
             return (Math.sin(440 * sampleAngle) * basePointRadius) / 4
           },
-          someLoopStructure: {
-            structureType: 'initialStructure',
-            loopBase: {
-              center: [50, 50],
-              radius: 20,
-            },
-            subLoopRotationAngle: getRelativeAngle({
-              relativeAngle: 0,
-            }),
-            subStructure: {
-              structureType: 'interposedStructure',
-              baseOrientationAngle: getRelativeAngle({
-                relativeAngle: 0.1,
-              }),
-              relativeSubDepth: 0.1,
-              relativeSubRadius: 0.95,
-              subPhaseAngle: getRelativeAngle({
-                relativeAngle: 0.2,
-              }),
-              subLoopRotationAngle: getRelativeAngle({
-                relativeAngle: 0.1,
-              }),
-              subStructure: {
-                structureType: 'terminalStructure',
-                baseOrientationAngle: getRelativeAngle({
-                  relativeAngle: 0.2,
-                }),
-                relativeSubDepth: 0.2,
-                relativeSubRadius: 1,
-                subPhaseAngle: getRelativeAngle({
-                  relativeAngle: 0.2,
-                }),
-              },
-            },
-          },
+          someLoopStructure: loopStructureA,
         })}
       />
     </svg>
