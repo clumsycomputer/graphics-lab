@@ -36,7 +36,7 @@ export function getTracedLoopPointData(
             pointAngle: traceAngle,
             someCircle: {
               center: someLoopPointsData.loopCenter,
-              radius: 1000000, // some big number
+              radius: 10000000000, // some big number
             },
           }),
         ],

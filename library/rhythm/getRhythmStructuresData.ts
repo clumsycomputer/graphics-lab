@@ -56,8 +56,8 @@ function getRhythmStructureData(api: GetRhythmStructureDataApi): {
   const { detachedStructure, structureBasePoints } = api
   const rhythmStructureDataResult = {
     detachedStructure,
-    detachedPoints: new Array(detachedStructure.rhythmDensity),
-    structurePoints: new Array(detachedStructure.rhythmDensity),
+    detachedPoints: new Array<number>(detachedStructure.rhythmDensity),
+    structurePoints: new Array<number>(detachedStructure.rhythmDensity),
   }
   getEuclideanRhythm({
     lhsCount: detachedStructure.rhythmDensity,

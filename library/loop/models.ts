@@ -30,8 +30,8 @@ interface BaseLoopStructureBase {
 }
 
 interface SubLoopStructureBase {
-  relativeFoundationDepth: number
-  relativeFoundationRadius: number
-  foundationPhaseAngle: number
+  relativeSubDepth: number
+  relativeSubRadius: number
+  subPhaseAngle: number
   baseOrientationAngle: number
 }

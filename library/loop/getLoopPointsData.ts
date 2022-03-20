@@ -2,12 +2,12 @@ import { getNormalizedAngle, getNormalizedAngleBetweenPoints } from '../general'
 import { getLoopPoint, GetLoopPointApi } from './getLoopPoint'
 import { AsymPoint, Point } from '../models'
 
-export interface GetLoopPointsApi
+export interface GetLoopPointsDataApi
   extends Pick<GetLoopPointApi, 'someLoopStructure'> {
   sampleCount: number
 }
 
-export function getLoopPointsData(api: GetLoopPointsApi): {
+export function getLoopPointsData(api: GetLoopPointsDataApi): {
   loopCenter: Point
   loopPoints: Array<AsymPoint>
 } {

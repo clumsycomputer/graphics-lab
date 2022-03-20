@@ -29,43 +29,42 @@ interface GetBaseLoopStructurePointApi
 
 function getBaseLoopStructurePoint(api: GetBaseLoopStructurePointApi): Point {
   const { someBaseLoopStructure, baseCircle, inputAngle } = api
-  const foundationCircleDepth =
-    someBaseLoopStructure.subStructure.relativeFoundationDepth *
-    baseCircle.radius
-  const unrotatedFoundationCircle: Circle = {
+  const subCircleDepth =
+    someBaseLoopStructure.subStructure.relativeSubDepth * baseCircle.radius
+  const unrotatedSubCircle: Circle = {
     center: [
-      foundationCircleDepth *
-        Math.cos(someBaseLoopStructure.subStructure.foundationPhaseAngle) +
+      subCircleDepth *
+        Math.cos(someBaseLoopStructure.subStructure.subPhaseAngle) +
         baseCircle.center[0],
-      foundationCircleDepth *
-        Math.sin(someBaseLoopStructure.subStructure.foundationPhaseAngle) +
+      subCircleDepth *
+        Math.sin(someBaseLoopStructure.subStructure.subPhaseAngle) +
         baseCircle.center[1],
     ],
     radius:
-      someBaseLoopStructure.subStructure.relativeFoundationRadius *
-      (baseCircle.radius - foundationCircleDepth),
+      someBaseLoopStructure.subStructure.relativeSubRadius *
+      (baseCircle.radius - subCircleDepth),
   }
   const subLoopPoint =
     someBaseLoopStructure.subStructure.structureType === 'interposedStructure'
       ? getBaseLoopStructurePoint({
           inputAngle,
-          baseCircle: unrotatedFoundationCircle,
+          baseCircle: unrotatedSubCircle,
           someBaseLoopStructure: someBaseLoopStructure.subStructure,
         })
       : getCirclePoint({
           pointAngle: inputAngle,
-          someCircle: unrotatedFoundationCircle,
+          someCircle: unrotatedSubCircle,
         })
   const { loopBaseCirclePoint } = getLoopBaseCirclePoint({
     baseCircle,
     subLoopPoint,
-    unrotatedFoundationCircleCenter: unrotatedFoundationCircle.center,
+    unrotatedSubCircleCenter: unrotatedSubCircle.center,
   })
   return getRotatedPoint({
     rotationAngle: someBaseLoopStructure.subLoopRotationAngle,
     anchorPoint: getRotatedPoint({
       anchorPoint: baseCircle.center,
-      basePoint: unrotatedFoundationCircle.center,
+      basePoint: unrotatedSubCircle.center,
       rotationAngle: someBaseLoopStructure.subStructure.baseOrientationAngle,
     }),
     basePoint: getRotatedPoint({
@@ -78,24 +77,24 @@ function getBaseLoopStructurePoint(api: GetBaseLoopStructurePointApi): Point {
 
 interface getLoopBaseCirclePointApi {
   baseCircle: Circle
-  unrotatedFoundationCircleCenter: Point
+  unrotatedSubCircleCenter: Point
   subLoopPoint: Point
 }
 
 function getLoopBaseCirclePoint(api: getLoopBaseCirclePointApi): {
   loopBaseCirclePoint: Point
 } {
-  const { baseCircle, subLoopPoint, unrotatedFoundationCircleCenter } = api
+  const { baseCircle, subLoopPoint, unrotatedSubCircleCenter } = api
   const childDepth = getDistanceBetweenPoints({
     pointA: baseCircle.center,
-    pointB: unrotatedFoundationCircleCenter,
+    pointB: unrotatedSubCircleCenter,
   })
   const childRadius = getDistanceBetweenPoints({
-    pointA: unrotatedFoundationCircleCenter,
+    pointA: unrotatedSubCircleCenter,
     pointB: subLoopPoint,
   })
   const childPointAngle = getNormalizedAngleBetweenPoints({
-    basePoint: unrotatedFoundationCircleCenter,
+    basePoint: unrotatedSubCircleCenter,
     targetPoint: subLoopPoint,
   })
   if (childDepth === 0) {
@@ -130,9 +129,9 @@ function getLoopBaseCirclePoint(api: getLoopBaseCirclePointApi): {
     return {
       loopBaseCirclePoint: [
         childCircleCenterToBaseCirclePointLength * Math.cos(childPointAngle) +
-          unrotatedFoundationCircleCenter[0],
+          unrotatedSubCircleCenter[0],
         childCircleCenterToBaseCirclePointLength * Math.sin(childPointAngle) +
-          unrotatedFoundationCircleCenter[1],
+          unrotatedSubCircleCenter[1],
       ],
     }
   }
